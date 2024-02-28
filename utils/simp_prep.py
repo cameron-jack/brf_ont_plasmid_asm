@@ -16,7 +16,7 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
     print("===============Start Data Preparation===============")
     print(f">>>Parsing SUMMARY csv file {csv_file}..")
     samples = []
-    with open(csv_file, "r") as fd:
+    with open(csv_file, "r", encoding='utf-8-sig') as fd:
         header = [s.lower() for s in fd.readline().strip().split(",")]
         hidx = {}
         for i, name in enumerate(header):
