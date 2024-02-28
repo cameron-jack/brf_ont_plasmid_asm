@@ -300,7 +300,7 @@ def simp_execution(
 
         System(f"gzip {filt_fq}")  # filt_fq is auto-removed by gzip later
 
-        if has_map:
+        if has_map == '1':
             rmap_file = f"{ref_map}/{sample}.fasta"
             perf_alignment(
                 f"{logs}/{cdata}_aln",
