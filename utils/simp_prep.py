@@ -70,7 +70,7 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
             if tmp_size == "":
                 size = 0
             else:
-                if not str.isdecimal(tmp_size):
+                if not str.isdecimal(tmp_size) and tmp_size.lower() != "unknown":
                     print(f"Error! approx size {tmp_size} is not decimal")
                     print(f"Please investigate {j+2}th line in the {csv_file}")
                     print("Exit..")
@@ -135,7 +135,7 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
                     for _, rseq in res.items():
                         fa.write(f">{new_sample}\n{rseq}\n")
                     fa.close()
-                System(f"rm {ref_map}/{path_to_map}")
+                System(f"rm \"{ref_map}/{path_to_map}\"")
 
             # 3. write to formatted csv
             fd.write(f"{barcode},{new_sample},{size},{has_map},{score},{length}\n")

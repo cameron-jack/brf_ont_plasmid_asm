@@ -279,23 +279,24 @@ def simp_execution(
             continue
 
         _, _, alen = read_sample_status(f"{asm_dir}/sample_status.txt")
-        isize = int(size)
-        if size != 0 and alen != 0:
-            if max(alen, isize) / min(alen, isize) > apx_ratio:
-                print("plasmid is smaller/bigger than expected")
-                print(f"assembly size: {alen}, approximate size: {isize}")
-                print(f"rerun assembly with --approx_size {isize}")
+        if size != "unknown":
+            isize = int(size)
+            if size != 0 and alen != 0:
+                if max(alen, isize) / min(alen, isize) > apx_ratio:
+                    print("plasmid is smaller/bigger than expected")
+                    print(f"assembly size: {alen}, approximate size: {isize}")
+                    print(f"rerun assembly with --approx_size {isize}")
 
-                asm_dir = asm_sample(
-                    asm_prefix,
-                    asm_fqdir,
-                    asms,
-                    barcode,
-                    sample,
-                    nattempts,
-                    add_prefix=asm_add_prefix + f"s{size}_",
-                    opts=["--approx_size", size],
-                )
+                    asm_dir = asm_sample(
+                        asm_prefix,
+                        asm_fqdir,
+                        asms,
+                        barcode,
+                        sample,
+                        nattempts,
+                        add_prefix=asm_add_prefix + f"s{size}_",
+                        opts=["--approx_size", size],
+                    )
 
         System(f"gzip {filt_fq}")  # filt_fq is auto-removed by gzip later
 

@@ -61,7 +61,7 @@ An example for `CSV_FILE` is given as follows.
 ```csv
 Sample name,Sample type,Size (bp),Barcode,Analysis to run,Supplied map?,Path to map,Quality cutoff,Length cutoff
 GB1_Tox5,Plasmid,6043,29,basecall and assemble,Y,GB1 Tox5.fasta,11,0
-pTWIST_acceptor,Plasmid,2513,30,basecall and assemble,Y,pTWIST acceptor.fasta,11,0
+pTWIST_acceptor,Plasmid,unknown,30,basecall and assemble,Y,pTWIST acceptor.fasta,11,0
 ```
 
 An example for `ROOT_DIR` hierarchy is given as follows.
@@ -120,7 +120,7 @@ Second, for each record listed in `ROOT_DIR/plas_config.csv` with barcode `barco
 
 Third, if flag `-f` (or `--filt_first`) is set, filtered reads will be used to perform assembly via `epi2me-labs/wf-clone-validation`, raw reads otherwise. Each data record will be assembled at most `NATTEMPTS` time, if a successful assembly is generated (determined by `sample_status.txt`) within `NATTEMPTS` attempts, such assembly will be marked as final. Otherwise, no further attempt is allowed to resecue the data record and further investigation on data itself is needed.
 
-Even with successfully assembly, if the assembled sequence length (determined by `sample_status.txt`) is far apart from approximated plasmid size provided, the pipeline will run another assembly cycle on this data record with additional assembly option `--approx_size <approx_size>` (within `NATTEMPTS` attempts). For example, suppose the approximated size is 2000bp, and `-a 1.5` is provided to the pipeline, the former step will be performed if the assembly length is greater than 3000bp.
+Even with successfully assembly, if the assembled sequence length (determined by `sample_status.txt`) is far apart from approximated plasmid size provided (or leave it as `unknown`), the pipeline will run another assembly cycle on this data record with additional assembly option `--approx_size <approx_size>` (within `NATTEMPTS` attempts). For example, suppose the approximated size is 2000bp, and `-a 1.5` is provided to the pipeline, the former step will be performed if the assembly length is greater than 3000bp.
 
 If the reference map FASTA file is provided, Minimap2 alignment with samtools indexing will also be performed between the reference and filtered FASTQ file.
 
