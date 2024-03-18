@@ -68,7 +68,7 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
 
             tmp_size = row[hidx["size (bp)"]]
             if tmp_size == "":
-                size = 0
+                size = "unknown"
             else:
                 if not str.isdecimal(tmp_size) and tmp_size.lower() != "unknown":
                     print(f"Error! approx size {tmp_size} is not decimal")
