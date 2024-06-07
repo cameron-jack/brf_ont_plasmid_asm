@@ -79,13 +79,17 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, barcodes: list, sampl
             print(
                 f"Remove all intermediate basecalled directories {odir}/*, rerun base calling.."
             )
-            System(f"rm -rf {odir}/*")
+            for path in os.listdir(odir):
+                if path != "calls.bam":
+                    System(f"rm -rf {odir}/{path}")
     else:
         # remove corrupted intermediate directories if any
         print(
                 f"Remove all intermediate basecalled directories {odir}/*, rerun base calling.."
             )
-        System(f"rm -rf {odir}/*")
+        for path in os.listdir(odir):
+            if path != "calls.bam":
+                System(f"rm -rf {odir}/{path}")
 
     if skip_basecalling:
         print("Skip base calling..")
@@ -132,7 +136,7 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, barcodes: list, sampl
             "demux",
             "--emit-fastq",
             "--kit-name",
-            guppy_kit,
+            dorado_kit,
             "--sample-sheet",
             sample_sheet,
             "--output-dir",
