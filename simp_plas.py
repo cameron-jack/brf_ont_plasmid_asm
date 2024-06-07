@@ -4,14 +4,14 @@ import utils.simp_exec as simp_exec
 
 
 def run_prep(args):
-    (root_dir, no_sample, ref_map, csv_file) = args
-    return simp_prep.simp_preparation(root_dir, no_sample, ref_map, csv_file)
+    (root_dir, no_sample, ref_map, csv_file, caller) = args
+    return simp_prep.simp_preparation(root_dir, no_sample, ref_map, csv_file, caller)
 
 
 def run_exec(args):
-    (root_dir, ref_map, cfg_file, nattempts, apx_ratio, filt_first) = args
+    (root_dir, ref_map, cfg_file, apx_ratio, filt_first, caller) = args
     return simp_exec.simp_execution(
-        root_dir, ref_map, cfg_file, nattempts, apx_ratio, filt_first
+        root_dir, ref_map, cfg_file, apx_ratio, filt_first, caller
     )
 
 

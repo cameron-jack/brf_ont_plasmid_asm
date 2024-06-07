@@ -36,6 +36,15 @@ def argument_parsing():
         help="path to the root directory, consists of subdirectories 1) no_sample and 2) ReferenceMaps.",
     )
 
+    parser_prep.add_argument(
+        "--caller",
+        dest="caller",
+        type=str,
+        choices=["dorado", "guppy"],
+        required=True,
+        help="base caller"
+    )
+
     parser_exec = sub_parsers.add_parser("exec", help="Execution")
 
     parser_exec.add_argument(
@@ -66,14 +75,14 @@ def argument_parsing():
     )
 
     parser_exec.add_argument(
-        "-n",
-        "--num_attempts",
-        dest="nattempts",
-        type=int,
-        required=False,
-        default=1,
-        help="number of attempts allowed per sample (default: 1)",
+        "--caller",
+        dest="caller",
+        type=str,
+        choices=["dorado", "guppy"],
+        required=True,
+        help="base caller"
     )
+
 
     args = argp.parse_args()
 
@@ -87,6 +96,7 @@ def argument_parsing():
     root_dir = os.path.abspath(args.root_dir)
     no_sample = root_dir + "/no_sample"
     ref_map = root_dir + "/ReferenceMaps"
+    caller = args.caller
 
     if not os.path.isdir(no_sample):
         print(f"Error! subdirectory {no_sample}/ does not exist.")
@@ -103,7 +113,7 @@ def argument_parsing():
             print(f"Error! -c/--csv_file does not exist, given {args.csv_file}")
             print("Exit..")
             sys.exit(1)
-        return args.mode, (root_dir, no_sample, ref_map, args.csv_file)
+        return args.mode, (root_dir, no_sample, ref_map, args.csv_file, caller)
 
     elif args.mode == "exec":
         cfg_file = root_dir + "/plas_config.csv"
@@ -112,11 +122,10 @@ def argument_parsing():
             print("Have you run `prep` mode?")
             print("Exit..")
             sys.exit(1)
-        nattempts = args.nattempts
-        if nattempts <= 0:
-            print(
-                f"Error, -n/--num_attempts should be integer larger than 0, given {nattempts}"
-            )
+
+        if not os.path.exists(root_dir + "/sample_sheet.csv"):
+            print(f"Error! sample sheet file does not exist.")
+            print("Have you run `prep` mode with --caller dorado?")
             print("Exit..")
             sys.exit(1)
 
@@ -132,9 +141,9 @@ def argument_parsing():
             root_dir,
             ref_map,
             cfg_file,
-            nattempts,
             apx_ratio,
             filt_first,
+            caller
         )
     else:
         pass

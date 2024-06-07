@@ -2,20 +2,23 @@ import os
 import sys
 import re
 from utils.utils import System, Create, get_fasta_todict
-
+from utils.configs import *
 
 # columns
 # sample name
 # barcode
+# experiment id
+# flow cell id
 # supplied map?
 # path to map
 # quality cutoff
 # length cutoff
 # size (bp)
-def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str):
+def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str, caller: str):
     print("===============Start Data Preparation===============")
     print(f">>>Parsing SUMMARY csv file {csv_file}..")
     samples = []
+    dorado_entries = []
     with open(csv_file, "r", encoding='utf-8-sig') as fd:
         header = [s.lower() for s in fd.readline().strip().split(",")]
         hidx = {}
@@ -78,6 +81,24 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
                     sys.exit(1)
                 size = tmp_size
 
+            if caller == "dorado":
+                # dorado_entries
+                exp_id = row[hidx["experiment id"]]
+                if exp_id == "":
+                    print(f"Error! missing experiment id for dorado basecaller mode")
+                    print(f"Please investigate {j+2}th line in the {csv_file}")
+                    print("Exit..")
+                    fd.close()
+                    sys.exit(1)
+                fcell_id = row[hidx["flow cell id"]]
+                if fcell_id == "":
+                    print(f"Error! missing flow_cell_id for dorado basecaller mode")
+                    print(f"Please investigate {j+2}th line in the {csv_file}")
+                    print("Exit..")
+                    fd.close()
+                    sys.exit(1)
+                dorado_entries.append((exp_id, fcell_id))
+
             samples.append((sample, barcode, size, has_map, path_to_map, score, length))
         fd.close()
 
@@ -88,14 +109,36 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
         sys.exit(1)
     print("Done")
 
+    if caller == "dorado":
+        if len(dorado_entries) != len(samples):
+            print(f"Error! #dorado entries != #samples")
+            print("Please double check the csv file")
+            print("Exit..")
+            sys.exit(1)
+        exp_ids = set(s[0] for s in dorado_entries)
+        if len(exp_ids) != 1:
+            print(f"Error! dorado entries contain (>1) experiment_id {exp_ids}")
+            print("Please double check the csv file")
+            print("Exit..")
+            sys.exit(1)
+        
+
     cfg_file = root_dir + "/plas_config.csv"
     Create(cfg_file)
+
+    ss_file = root_dir + "/sample_sheet.csv"
+    ss_fd = None
+    if caller == "dorado":
+        Create(ss_file)
+        ss_fd = open(ss_file, "w")
+        ss_fd.write(f"barcode,sample_id,flow_cell_id,experiment_id,kit\n")
 
     # correct naming, get a formatted CSV record for execution
     print(f">>>Preparing config file {cfg_file}..")
     barcodes_sanity = {}
     with open(cfg_file, "w") as fd:
-        for sample, barcode, size, has_map, path_to_map, score, length in samples:
+        for sidx in range(len((samples))):
+            (sample, barcode, size, has_map, path_to_map, score, length) = samples[sidx]
 
             # 0. check collide barcode(s)
             if barcode in barcodes_sanity:
@@ -139,22 +182,47 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str)
 
             # 3. write to formatted csv
             fd.write(f"{barcode},{new_sample},{size},{has_map},{score},{length}\n")
+            # 4. write to dorado sample sheet
+            if caller == "dorado":
+                (exp_id, fcell_id) = dorado_entries[sidx]
+                ss_fd.write(f"{barcode},{new_sample},{fcell_id},{exp_id},{dorado_kit}\n")
         fd.close()
+    if caller == "dorado":
+        ss_fd.close()
     print("Done")
 
-    # move all fast5 files to <root_dir>/calledFast5/
-    fast5sdir = root_dir + "/calledFast5"
-    os.makedirs(fast5sdir, exist_ok=True)
-    System(f'find {no_sample} -type f -name "*.fast5" | xargs -I X mv X {fast5sdir}/.')
-    print(f">>>All fast5 files under {no_sample} have been moved to {fast5sdir}/")
-    cfast5 = 0
-    for fname in os.listdir(fast5sdir):
-        if fname.endswith(".fast5"):
-            print(f"\t{fname}")
-            cfast5 += 1
-        else:
-            print(f"\tWarning, non-fast5 file found: {fname}")
-    print(f"Number of fast5 file in {fast5sdir}: {cfast5}")
+    if caller == "guppy":
+        # move all fast5 files to <root_dir>/calledFast5/
+        fast5sdir = root_dir + "/calledFast5"
+        os.makedirs(fast5sdir, exist_ok=True)
+        System(f'find {no_sample} -type f -name "*.fast5" | xargs -I X mv X {fast5sdir}/.')
+        print(f">>>All fast5 files under {no_sample} have been moved to {fast5sdir}/")
+        cfast5 = 0
+        for fname in os.listdir(fast5sdir):
+            if fname.endswith(".fast5"):
+                print(f"\t{fname}")
+                cfast5 += 1
+            else:
+                print(f"\tWarning, non-fast5 file found: {fname}")
+        print(f"Number of fast5 file in {fast5sdir}: {cfast5}")
+    elif caller == "dorado":
+        # move all pod5 files to <root_dir>/calledPod5/
+        pod5sdir = root_dir + "/calledPod5"
+        os.makedirs(pod5sdir, exist_ok=True)
+        System(f'find {no_sample} -type f -name "*.pod5" | xargs -I X mv X {pod5sdir}/.')
+        print(f">>>All pod5 files under {no_sample} have been moved to {pod5sdir}/")
+        cpod5 = 0
+        for fname in os.listdir(pod5sdir):
+            if fname.endswith(".pod5"):
+                print(f"\t{fname}")
+                cpod5 += 1
+            else:
+                print(f"\tWarning, non-pod5 file found: {fname}")
+        print(f"Number of pod5 file in {pod5sdir}: {cpod5}")
+    else:
+        print(f"Unknown caller option: {caller}")
+        sys.exit(1)
+        
     print("==============Complete Data Preparation=============")
 
     return 0

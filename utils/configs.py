@@ -1,6 +1,17 @@
+# guppy base calling
 guppy_basecaller = (
     "/home/groups/schwessinger/guppy/6.5.7/ont-guppy/bin/guppy_basecaller"
 )
+guppy_kit = "SQK-RBK114-96"
+guppy_model = "dna_r10.4.1_e8.2_400bps_sup.cfg"
+
+# dorado base calling
+dorado_basecaller = (
+    "/home/groups/schwessinger/dorado/0.7.0/bin/dorado"
+)
+dorado_kit = "SQK-RBK114-96"
+dorado_model = "sup"
+
 nextflow = "nextflow"
 wf_clone_validation = "epi2me-labs/wf-clone-validation"
 nanoFilt = "NanoFilt"

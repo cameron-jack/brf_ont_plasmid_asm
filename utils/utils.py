@@ -69,7 +69,6 @@ def get_fasta_todict(fasta_file: str):
             lend[sid] = len(seq)
     return res, lend
 
-
 def read_sample_status(ss_file: str):
     barcode = None
     status = None
@@ -78,6 +77,10 @@ def read_sample_status(ss_file: str):
         barcode, status, length = fd.readlines()[1].strip().split(",")
         fd.close()
     if status == "Completed successfully":
-        return barcode, True, int(length)
+        return barcode, 1, status, int(length)
+    elif status == "Failed to reconcile assemblies":
+        return barcode, 2, status, None
+    elif status == "Failed to assemble using Flye":
+        return barcode, 3, status, None
     else:
-        return barcode, False, None
+        return barcode, -1, status, None
