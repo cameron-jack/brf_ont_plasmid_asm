@@ -123,11 +123,11 @@ def argument_parsing():
             print("Exit..")
             sys.exit(1)
 
-        if not os.path.exists(root_dir + "/sample_sheet.csv"):
-            print(f"Error! sample sheet file does not exist.")
-            print("Have you run `prep` mode with --caller dorado?")
-            print("Exit..")
-            sys.exit(1)
+        # if not os.path.exists(root_dir + "/sample_sheet.csv"):
+        #     print(f"Error! sample sheet file does not exist.")
+        #     print("Have you run `prep` mode with --caller dorado?")
+        #     print("Exit..")
+        #     sys.exit(1)
 
         apx_ratio = args.apx_ratio
         if apx_ratio <= 1.0:
