@@ -81,6 +81,7 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes
         elogfile = f"{prefix}.basecaller.err.log"
         ibamfile = ""
         if os.path.exists(cbamfile):
+            print(f"Found intermediate bam file {cbamfile}, resume")
             ibamfile = f"{tmpdir}/incomplete.bam"
             System(f"mv {cbamfile} {ibamfile}")
         
