@@ -105,8 +105,8 @@ def simp_execution(
     elif caller == "dorado":
         pod5sdir = root_dir + "/calledPod5"
         barcodes = [data[0] for data in samples]
-        sample_sheet = root_dir + "/sample_sheet.csv"
-        base_calling_dorado(f"{logs}/{cdata}_dorado", pod5sdir, bscall, tmpdir, barcodes, sample_sheet)
+        # sample_sheet = root_dir + "/sample_sheet.csv"
+        base_calling_dorado(f"{logs}/{cdata}_dorado", pod5sdir, bscall, tmpdir, barcodes)
     else:
         print(f"Unknown caller option: {caller}")
         sys.exit(1)

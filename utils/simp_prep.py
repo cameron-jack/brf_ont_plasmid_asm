@@ -126,12 +126,12 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str,
     cfg_file = root_dir + "/plas_config.csv"
     Create(cfg_file)
 
-    ss_file = root_dir + "/sample_sheet.csv"
-    ss_fd = None
-    if caller == "dorado":
-        Create(ss_file)
-        ss_fd = open(ss_file, "w")
-        ss_fd.write(f"barcode,alias,sample_id,flow_cell_id,experiment_id,kit\n")
+    # ss_file = root_dir + "/sample_sheet.csv"
+    # ss_fd = None
+    # if caller == "dorado":
+    #     Create(ss_file)
+    #     ss_fd = open(ss_file, "w")
+    #     ss_fd.write(f"barcode,alias,sample_id,flow_cell_id,experiment_id,kit\n")
 
     # correct naming, get a formatted CSV record for execution
     print(f">>>Preparing config file {cfg_file}..")
@@ -183,12 +183,12 @@ def simp_preparation(root_dir: str, no_sample: str, ref_map: str, csv_file: str,
             # 3. write to formatted csv
             fd.write(f"{barcode},{new_sample},{size},{has_map},{score},{length}\n")
             # 4. write to dorado sample sheet
-            if caller == "dorado":
-                (exp_id, fcell_id) = dorado_entries[sidx]
-                ss_fd.write(f"{barcode},{barcode},{new_sample},{fcell_id},{exp_id},{dorado_kit}\n")
+            # if caller == "dorado":
+            #     (exp_id, fcell_id) = dorado_entries[sidx]
+            #     ss_fd.write(f"{barcode},{barcode},{new_sample},{fcell_id},{exp_id},{dorado_kit}\n")
         fd.close()
-    if caller == "dorado":
-        ss_fd.close()
+    # if caller == "dorado":
+    #     ss_fd.close()
     print("Done")
 
     if caller == "guppy":

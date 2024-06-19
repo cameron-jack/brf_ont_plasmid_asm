@@ -58,7 +58,7 @@ def base_calling_guppy(prefix: str, idir: str, odir: str, tmpdir: str, barcodes:
     print(f"time_elapsed {round(time.time() - ts, 2)} seconds")
     return
 
-def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes: list, sample_sheet: str):
+def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes: list):
     print(f">>>Dorado Base calling..")
     ts = time.time()
 
@@ -115,8 +115,6 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes
                 "--emit-fastq",
                 "--kit-name",
                 dorado_kit,
-                "--sample-sheet",
-                sample_sheet,
                 "--output-dir",
                 odir,
                 cbamfile
@@ -133,13 +131,14 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes
     for barcode in barcodes:
         os.makedirs(f"{odir}/{barcode}")
         os.makedirs(f"{odir}/{barcode}_filt")
-        if not os.path.exists(f"{odir}/{barcode}.fastq"):
-            print(f"Error! basecalling error, {odir}/{barcode}.fastq does not exists")
+        fastq_file=f"{odir}/{dorado_kit}_{barcode}.fastq"
+        if not os.path.exists(fastq_file):
+            print(f"Error! basecalling error, {fastq_file} does not exists")
             print(f"Please check log files {prefix}.*.out(.err)")
             print("Exit..")
             sys.exit(1)
 
-        System(f"mv {odir}/{barcode}.fastq {odir}/{barcode}/")
+        System(f"mv {fastq_file} {odir}/{barcode}/{barcode}.fastq")
         System(f"ln -s {odir}/{barcode}/{barcode}.fastq {odir}/{barcode}_filt/merged.fastq")
     
     os.makedirs(f"{odir}/unclassified")
