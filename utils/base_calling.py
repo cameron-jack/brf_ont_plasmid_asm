@@ -126,25 +126,33 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes
             print("Command: " + " ".join(command))
             print("Exit..")
             sys.exit(1)
+        # move fastq files to barcode subdirectories
+        for barcode in barcodes:
+            fastq_file=f"{odir}/{dorado_kit}_{barcode}.fastq"
+            if not os.path.exists(fastq_file):
+                print(f"Error! basecalling error, {fastq_file} does not exists")
+                print(f"Please check log files {prefix}.*.out(.err)")
+                print("Exit..")
+                sys.exit(1)
+            os.makedirs(f"{odir}/{barcode}")
+            System(f"mv {fastq_file} {odir}/{barcode}/{barcode}.fastq")
+
+        os.makedirs(f"{odir}/unclassified")
+        for path in os.listdir(odir):
+            if not os.path.isdir(path):
+                System(f"mv {odir}/{path} {odir}/unclassified/")
 
     # move fastq to directories
-    for barcode in barcodes:
-        os.makedirs(f"{odir}/{barcode}")
-        os.makedirs(f"{odir}/{barcode}_filt")
-        fastq_file=f"{odir}/{dorado_kit}_{barcode}.fastq"
+    for barcode in barcodes:            
+        os.makedirs(f"{odir}/{barcode}_filt", exist_ok=True)
+        fastq_file = f"{odir}/{barcode}/{barcode}.fastq"
         if not os.path.exists(fastq_file):
             print(f"Error! basecalling error, {fastq_file} does not exists")
             print(f"Please check log files {prefix}.*.out(.err)")
             print("Exit..")
             sys.exit(1)
-
-        System(f"mv {fastq_file} {odir}/{barcode}/{barcode}.fastq")
-        System(f"ln -s {odir}/{barcode}/{barcode}.fastq {odir}/{barcode}_filt/merged.fastq")
-    
-    os.makedirs(f"{odir}/unclassified")
-    for path in os.listdir(odir):
-        if path.endswith(".fastq"):
-            System(f"mv {odir}/{path} {odir}/unclassified/")
+        if not os.path.exists(f"{odir}/{barcode}_filt/merged.fastq"):
+            System(f"ln -s {fastq_file} {odir}/{barcode}_filt/merged.fastq")
 
     
     print("Done")
