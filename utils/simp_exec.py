@@ -94,19 +94,19 @@ def simp_execution(
     bscall = f"{root_dir}/calledFastq"
     asms = f"{root_dir}/asmOutput"
     alns = f"{root_dir}/alnOutput"
-    tmpdir = f"{root_dir}/tmp"
-    for dir in [logs, bscall, asms, alns]:
+    tmps = f"{root_dir}/tmp"
+    for dir in [logs, bscall, asms, alns, tmps]:
         os.makedirs(dir, exist_ok=True)
 
     if caller == "guppy":
         fast5sdir = root_dir + "/calledFast5"
         barcodes = [data[0] for data in samples]
-        base_calling_guppy(f"{logs}/{cdata}_guppy", fast5sdir, bscall, tmpdir, barcodes)
+        base_calling_guppy(f"{logs}/{cdata}_guppy", fast5sdir, bscall, tmps, barcodes)
     elif caller == "dorado":
         pod5sdir = root_dir + "/calledPod5"
         barcodes = [data[0] for data in samples]
         # sample_sheet = root_dir + "/sample_sheet.csv"
-        base_calling_dorado(f"{logs}/{cdata}_dorado", pod5sdir, bscall, tmpdir, barcodes)
+        base_calling_dorado(f"{logs}/{cdata}_dorado", pod5sdir, bscall, tmps, barcodes)
     else:
         print(f"Unknown caller option: {caller}")
         sys.exit(1)
