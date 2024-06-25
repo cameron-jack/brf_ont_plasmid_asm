@@ -139,7 +139,7 @@ def base_calling_dorado(prefix: str, idir: str, odir: str, tmpdir: str, barcodes
 
         os.makedirs(f"{odir}/unclassified")
         for path in os.listdir(odir):
-            if not os.path.isdir(path):
+            if not os.path.isdir(f"{odir}/{path}"):
                 System(f"mv {odir}/{path} {odir}/unclassified/")
 
     # move fastq to directories
