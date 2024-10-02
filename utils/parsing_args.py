@@ -130,7 +130,7 @@ def argument_parsing():
         #     sys.exit(1)
 
         apx_ratio = args.apx_ratio
-        if apx_ratio <= 1.0:
+        if apx_ratio < 1.0:
             print(f"Error, -a/--apx_ratio must be greater than 1.0, given {apx_ratio}")
             print("Exit..")
             sys.exit(1)

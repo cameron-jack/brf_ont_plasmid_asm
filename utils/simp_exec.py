@@ -127,11 +127,11 @@ def simp_execution(
         if filt_first:
             asm_prefix = f"{logs}/{cdata}_wf_cval_filt"
             asm_fqdir = f"{bscall}/{barcode}_filt/"
-            asm_add_prefix = "filt_"
+            asm_add_prefix = "filt"
         else:
             asm_prefix = f"{logs}/{cdata}_wf_cval"
             asm_fqdir = f"{bscall}/{barcode}/"
-            asm_add_prefix = "raw_"
+            asm_add_prefix = "raw"
 
         asm_type, asm_dir = asm_sample(
             asm_prefix,
