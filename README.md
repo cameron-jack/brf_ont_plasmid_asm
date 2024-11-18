@@ -1,4 +1,4 @@
-## Simple Plamsid Pipeline
+## Simple Plamsid Pipeline - Forked for BRF
 Run plasmid sequencing, assembly, and alignment as simple as it is.
 
 ### Download and Setup
