@@ -2,7 +2,7 @@
 Run plasmid sequencing, assembly, and alignment as simple as it is.
 
 ### Download and Setup
-This pipeline requires a 64-bit Linux system and python (supported versions are python3: 3.2 and higher).
+This pipeline requires a 64-bit Linux system and python (supported versions are python3: 3.8 and higher due to an argparse requirement).
 
 Download the pipeline via Git:
 ```bash
