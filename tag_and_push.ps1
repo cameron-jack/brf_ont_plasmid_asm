@@ -1,8 +1,8 @@
-$VER = "v2.00.000"
+$VER = "v2.00.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: First push of new plasmid workflow. Likely many bugs
+* FIXED: argument name written as string
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

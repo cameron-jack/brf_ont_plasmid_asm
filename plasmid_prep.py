@@ -190,7 +190,7 @@ def main():
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
     args = parser.parse_args()
 
-    p = Path('args.plasmid_dir')
+    p = Path(args.plasmid_dir)
     if not p.exists():
         print(f'Error: no such directory {args.plasmid_dir}')
         exit(1)
