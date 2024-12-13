@@ -1,13 +1,55 @@
 ## Simple Plamsid Pipeline - Forked for BRF
+Version 2.0
+Replaces the original Simple Plasmid Pipeline
+
+Requires one top-level directory for all the client plasmids you want to run in one go. 
+Inside, you'd have one directory for each client. In each client directory you'd have 
+an experiment directory for each separate plasmid (the barcode name, or sample name). 
+Within that are all the FASTQ sequences files for that plasmid, an optional 
+directory called "reference" - if you have a reference - and another optional directory 
+called "insert" - for if you have a short fragment that you're trying to find in the plasmid.
+ 
+You'd then a Python script called "plasmid_prep.py" which would take the path to that 
+top-level directory. It would then make per-client tables that inform the pipeline how 
+to run the samples, and would print the paths to each of these on the screen, so that 
+you can then customise them if needed (unlikely).
+ 
+It would also make a shell script for that top-level directory, which would run each of 
+the stages of the pipeline for each of the clients and their samples. It'd just run each 
+in turn. I think you'd be looking at perhaps being able to get through 10 plasmids per 
+hour. It will run Nanofilt, the wf-clone-validation pipeline, 
+and minimap2 (just the same as the existing pipeline).
+ 
+There should be one report per client.
+
 Run plasmid sequencing, assembly, and alignment as simple as it is.
 
 ### Download and Setup
-This pipeline requires a 64-bit Linux system and python (supported versions are python3: 3.8 and higher due to an argparse requirement).
+This pipeline requires a 64-bit Linux system and python (supported versions are python3.8 and higher).
 
 Download the pipeline via Git:
 ```bash
 git clone simple_plasmid
 ```
+
+External dependencies:
+* minimap2
+* samtools
+* Nanofilt (deprecated and to be replaced with Chopper)
+* Nextflow
+* Singularity
+
+Each of these by default will be expected to be found in $path, but full paths for each can be provided as command line arguments to plasmid_prep.py
+
+plasmid_dir/
+    | - clientA/
+        | - fastq1...fastqN (.gz possible)
+        | - reference/ref_filename.fa (optional)
+        | - insert/insert_filename.fa (optional)
+    | - clientB/
+        | ...
+    ...
+
 
 Several dependencies such as `minimap2` and `samtools` are required. Check `utils/configs.py` for further requirements and modify them accordingly. `alignment.sh` can be found under directory `utils`.
 
