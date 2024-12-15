@@ -211,8 +211,9 @@ def main():
         old_files = [f for f in p.glob('*') if f.is_file() and \
                 (str(f).endswith('.csv') or str(f).endswith('.sh'))]
         for d in client_dirs:
-            for fp in d.glob('*') if fp.is_file() and str(fp).endswith(f'_filt.sh'):
-                old_files.append(fp)
+            for fp in d.glob('*'):
+                if fp.is_file() and str(fp).endswith(f'_filt.sh'):
+                    old_files.append(fp)
         for old_fp in old_files:
             print(f'Purging existing file {old_fp}')
             old_fp.unlink()
