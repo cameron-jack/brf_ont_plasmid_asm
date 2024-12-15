@@ -12,6 +12,7 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
         print('#!/bin/bash', file=fout)
         for csp in client_script_paths:
             print(f'./{csp.name}', file=fout)
+    print(f'Generated top-level script {run_path}')
 
 
 def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix='unfilt_', min_length=150, min_quality=10):

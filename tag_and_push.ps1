@@ -1,8 +1,8 @@
-$VER = "v2.00.016"
+$VER = "v2.00.017"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: assembly path
+* NEW: displays top-level run script path
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
