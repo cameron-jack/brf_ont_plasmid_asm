@@ -89,7 +89,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'-profile singularity', file=fout)
         print(f'', file=fout)
         assembly_fp = ''  # path to assembled plasmid
-        print(f'# map each original FASTQ back to assembly')
+        print(f'# map each original FASTQ back to assembly', file=fout)
         print(f'{client_info=}')
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
