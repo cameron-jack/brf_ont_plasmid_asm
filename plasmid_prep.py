@@ -73,7 +73,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
     """
     filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix)
     client_script_path = client_path.parent/f'run_{client_path.name}.sh'
-    print(f'{client_info=}')
+    #print(f'{client_info=}')
     with open(client_script_path, 'wt') as fout:
         print('#!/bin/bash', file=fout)
         print(f'', file=fout)

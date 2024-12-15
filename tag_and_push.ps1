@@ -1,8 +1,8 @@
-$VER = "v2.00.013"
+$VER = "v2.00.014"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* DEBUG: tweaks
+* DEBUG: tweaks 2
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
