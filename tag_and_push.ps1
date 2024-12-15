@@ -2,7 +2,7 @@ $VER = "v2.00.017"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: displays top-level run script path
+* FIXED: reference and insert were lists not paths
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

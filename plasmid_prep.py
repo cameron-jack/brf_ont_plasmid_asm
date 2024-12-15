@@ -258,7 +258,7 @@ def main():
                 if len(ref_fp) != 1:
                     print(f'Reference files {ref_fp} found. There should be exactly one reference file')
                     exit(1)
-                client_info[cdir.name][sd.name]['reference'] = ref_fp
+                client_info[cdir.name][sd.name]['reference'] = ref_fp[0]
                 
             if not insert_dir.exists():
                 if args.verbose:
@@ -271,7 +271,7 @@ def main():
                 if len(insert_fp) != 1:
                     print(f'Insert files {ref_fp} found. There should be exactly one insert file')
                     exit(1)
-                client_info[cdir.name][sd.name]['insert'] = insert_fp
+                client_info[cdir.name][sd.name]['insert'] = insert_fp[0]
 
         # generate the client sample sheet and run script
         client_sample_sheet_path = generate_sample_sheet(client_info, cdir)
