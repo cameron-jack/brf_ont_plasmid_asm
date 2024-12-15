@@ -1,8 +1,8 @@
-$VER = "v2.00.006"
+$VER = "v2.00.007"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: more path/string fun
+* FIXED: another Path bug
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

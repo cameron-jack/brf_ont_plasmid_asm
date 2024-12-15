@@ -7,7 +7,7 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
     Make a top-level script that launches all client scripts sequentially
     top_dir_path = client_dir_path.parent
     """
-    run_path = top_dir_path / 'run_plasmids.sh'
+    run_path = Path(top_dir_path) / 'run_plasmids.sh'
     with open(run_path,'wt') as fout:
         print('#!/bin/bash', file=fout)
         for csp in client_script_paths:
