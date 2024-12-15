@@ -73,6 +73,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
     """
     filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix)
     client_script_path = client_path.parent/f'run_{client_path.name}.sh'
+    out_dn = client_path/"output"
     #print(f'{client_info=}')
     with open(client_script_path, 'wt') as fout:
         print('#!/bin/bash', file=fout)
@@ -85,16 +86,17 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'{nextflow_path} \\', file=fout)
         print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
         print(f'  --fastq {client_path} \\', file=fout)
-        print(f'  --outdir {client_path/"output"} \\', file=fout)
+        print(f'  --outdir {out_dn} \\', file=fout)
         print(f'  --sample_sheet {client_sample_sheet_path} \\', file=fout)
         print(f'  -profile singularity', file=fout)
         print(f'', file=fout)
-        assembly_fp = ''  # path to assembled plasmid
         print(f'# map each original FASTQ back to assembly', file=fout)
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
+                assembly_fp = f'{out_dn}/{sample_name}.final.fasta'  # path to assembled plasmid
+                #print(f'Found fastq {fp=}')
                 fo = rename_fastq_to_bam(fp)
-                print(f'{minimap2_path} -X map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} --write-index - ')
+                print(f'{minimap2_path} -X map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} --write-index - ', file=fout)
     return client_script_path
 
 
@@ -152,7 +154,7 @@ def rename_fastq_to_bam(fp):
     """
     suffix = ['.fq','.fq.gz','.fastq','.fastq.gz']
     for s in suffix:
-        if str(fp).endswith(s):
+        if str(fp).lower().endswith(s):
             return Path(str(fp).replace(s,'.bam'))
 
 

@@ -1,8 +1,8 @@
-$VER = "v2.00.015"
+$VER = "v2.00.016"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: client path string issue
+* FIXED: assembly path
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
