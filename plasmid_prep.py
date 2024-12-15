@@ -127,7 +127,7 @@ def check_fastq_name(fn):
     """
     suffix = ['.fq','.fq.gz','.fastq','.fastq.gz']
     for s in suffix:
-        if fn.lower().endswith(s):
+        if str(fn).lower().endswith(s):
             return True
     return False
 
@@ -139,7 +139,7 @@ def check_fasta_name(fn):
     """
     suffix = ['.fa','.fa.gz','.fasta','.fasta.gz']
     for s in suffix:
-        if fn.lower().endswith(s):
+        if str(fn).lower().endswith(s):
             return True
     return False
 
@@ -150,7 +150,7 @@ def rename_fastq_to_bam(fp):
     """
     suffix = ['.fq','.fq.gz','.fastq','.fastq.gz']
     for s in suffix:
-        if fp.endswith(s):
+        if str(fp).endswith(s):
             return Path(str(fp).replace(s,'.bam'))
 
 
