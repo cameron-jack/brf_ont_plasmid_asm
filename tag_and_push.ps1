@@ -1,8 +1,8 @@
-$VER = "v2.00.002"
+$VER = "v2.00.003"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: bogus dictionary syntax
+* FIXED: reference logic
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

@@ -230,35 +230,31 @@ def main():
             ref_dir = sd.joinpath('reference')  # optional
             insert_dir = sd.joinpath('insert')  # optional
 
-            if ref_dir:
-                if not ref_dir.exists():
-                    # this should not happen since it's generated
-                    print(f'Reference directory {ref_dir} not found! Client {cdir.name} sample {sd.name}')
-                    exit(1)
-                elif not ref_dir.is_dir():
-                    # this should not happen since it's generated
+            if not ref_dir.exists():
+                if args.verbose:
+                    print(f'Reference directory {ref_dir} not found. Client {cdir.name} sample {sd.name}')
+            else:
+                if not ref_dir.is_dir():
                     print(f'Reference directory {ref_dir} is not a directory! Client {cdir.name} sample {sd.name}')
                     exit(1)
                 ref_fp = [f for f in ref_dir.glob('*') if f.is_file() and check_fasta_name(f.name)]
                 if len(ref_fp) != 1:
-                    print(f'Reference files {ref_fp} found. There should be only one!')
+                    print(f'Reference files {ref_fp} found. There should be exactly one reference file')
                     exit(1)
-                client_info[cdir.name][sd.name]['reference':ref_fp]
+                client_info[cdir.name][sd.name]['reference'] = ref_fp
                 
-            if insert_dir:
-                if not insert_dir.exists():
-                    # this should not happen since it's generated
-                    print(f'Insert directory {insert_dir} not found! Client {cdir.name} sample {sd.name}')
-                    exit(1)
-                elif not insert_dir.is_dir():
-                    # this should not happen since it's generated
+            if not insert_dir.exists():
+                if args.verbose:
+                    print(f'Insert directory {insert_dir} not found. Client {cdir.name} sample {sd.name}')
+            else:
+                if not insert_dir.is_dir():
                     print(f'Insert directory {insert_dir} is not a directory! Client {cdir.name} sample {sd.name}')
                     exit(1)
                 insert_fp = [f for f in insert_dir.glob('*') if f.is_file() and check_fasta_name(f.name)]
                 if len(insert_fp) != 1:
-                    print(f'Insert files {ref_fp} found. There should be only one!')
+                    print(f'Insert files {ref_fp} found. There should be exactly one insert file')
                     exit(1)
-                client_info[cdir.name][sd.name]['insert':insert_fp]
+                client_info[cdir.name][sd.name]['insert'] = insert_fp
 
         # generate the client sample sheet and run script
         client_sample_sheet_path = generate_sample_sheet(client_info, cdir)
