@@ -26,11 +26,11 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
     """
     filter_script_paths = []
     for sample_name in client_info[client_path.name]:
-        filter_script_path = client_path/sample_name+'_filt.sh'
+        filter_script_path = client_path / str(sample_name) + '_filt.sh'
         with open(filter_script_path, 'wt') as fout:
             print('#!/bin/bash', file=fout)
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
-                prefilt_path = fp.parent/(prefilter_prefix+fp.name)
+                prefilt_path = fp.parent / str(prefilter_prefix) + fp.name
                 print(f'if [[ ! -e {prefilt_path}]]', file=fout)
                 print(f'then', file=fout)
                 print(f'    mv {fp} {prefilt_path}', file=fout)
@@ -108,7 +108,7 @@ def generate_sample_sheet(client_info, client_path):
     type defaults to 'test_sample' but could also be 'postive_control','negative_control','no_template_control'
     headers: alias, barcode, type, approx_size, cut_site, full_reference, insert_reference
     """
-    client_sample_sheet_path = client_path.parent / client_path.name + '_sample_sheet.csv'
+    client_sample_sheet_path = client_path.parent / str(client_path.name) + '_sample_sheet.csv'
     with open(client_sample_sheet_path, 'wt') as fout:
         print(','.join(['alias','barcode','type','approx_size','cut_site','full_reference','insert_reference']), file=fout)
         for sample_name in client_info[client_path.name]:
