@@ -79,7 +79,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'', file=fout)
         print(f'# Uncomment any of the filtering script paths below to run filtering prior to plasmid assembly', file=fout)
         for fsp in filter_script_paths:
-            print(f'#{fsp.parent.name/fsp.name}', file=fout)
+            print(f'#{client_path.name}/{fsp.name}', file=fout)
         print('', file=fout)
         print('# ONT wf-clone-validation pipeline', file=fout)
         print(f'{nextflow_path} \\', file=fout)
