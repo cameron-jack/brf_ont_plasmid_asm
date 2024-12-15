@@ -1,8 +1,10 @@
-$VER = "v2.00.008"
+$VER = "v2.00.009"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: script naming needed f-string
+* FIXED: default path tweaks
+* FIXED: NanoFilt script wasn't complete
+* NEW: added --purge option to remove old scripts and sample sheets
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

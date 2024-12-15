@@ -23,6 +23,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
     For each sample, create a script which:
     - renames the original fastq XXX to unfilt_XXX
     - filters the unfilt_XXX file to the parameters given and outputs as XXX (matching the expected file names)
+    The script should be in available in the client directory to avoid sample name clashes
     """
     filter_script_paths = []
     for sample_name in client_info[client_path.name]:
@@ -34,8 +35,8 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
                 print(f'if [[ ! -e {prefilt_path}]]', file=fout)
                 print(f'then', file=fout)
                 print(f'    mv {fp} {prefilt_path}', file=fout)
-                print(f'fi')
-                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {fp} 2> {fp}.log')
+                print(f'fi', file=fout)
+                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {fp} 2> {fp}.log', file=fout)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
 
@@ -77,7 +78,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'', file=fout)
         print(f'# Uncomment any of the filtering script paths below to run filtering prior to plasmid assembly', file=fout)
         for fsp in filter_script_paths:
-            print(f'#./{fsp}', file=fout)
+            print(f'#{fsp}', file=fout)
         print('', file=fout)
         print('# ONT wf-clone-validation pipeline', file=fout)
         print(f'{nextflow_path} \\', file=fout)
@@ -181,13 +182,14 @@ def main():
     parser = AP()
     parser.add_argument('plasmid_dir', help='Path to folder containing all client plasmid data')
     parser.add_argument('-v', '--verbose', help='Display more information about the prep process')
-    parser.add_argument('--minimap2_path', default='minimap2', help='Path to minimap2')
-    parser.add_argument('--samtools_path', default='samtools', help='Path to samtools')
-    parser.add_argument('--filter_path', default='nanofilt', help='Path to nanofilt or chopper')
-    parser.add_argument('--nextflow_path', default='nextflow', help='Path to nextflow')
-    parser.add_argument('--pipeline_path', default='', help='Path to ONT wf-clone-validation pipeline')
+    parser.add_argument('--minimap2_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/minimap2', help='Path to minimap2')
+    parser.add_argument('--samtools_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/samtools', help='Path to samtools')
+    parser.add_argument('--filter_path', default='/home/brf/lib/miniconda3/bin/NanoFilt', help='Path to nanofilt or chopper')
+    parser.add_argument('--nextflow_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
+    parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
     parser.add_argument('--pipeline_version', default='v1.6.0', help='wf-clone-validation pipeline version')
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
+    parser.add_argument('--purge', action='store_true', help='Remove all old scripts and sample sheets from the top level plasmid directory before continuing')
     args = parser.parse_args()
 
     p = Path(args.plasmid_dir)
@@ -204,6 +206,16 @@ def main():
         exit(1)
     if args.verbose:
         print(f'Client directories found: {client_dirs}')
+
+    if args.purge:
+        old_files = [f for f in p.glob('*') if f.is_file() and \
+                (str(f).endswith('.csv') or str(f).endswith('.sh'))]
+        for d in client_dirs:
+            for fp in d.glob('*') if fp.is_file() and str(fp).endswith(f'_filt.sh'):
+                old_files.append(fp)
+        for old_fp in old_files:
+            print(f'Purging existing file {old_fp}')
+            old_fp.unlink()
 
     # each sample/alias has it's own set of records, alias is the barcode name and is the directory that holds the FASTQ files
     client_info = {}
