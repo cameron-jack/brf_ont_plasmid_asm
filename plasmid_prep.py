@@ -119,8 +119,8 @@ def generate_sample_sheet(client_info, client_path):
         for sample_name in client_info[client_path.name]:
             alias = sample_name
             barcode = sample_name
-            reference = client_info[client_path.name][sample_name].get('reference','')
-            insert = client_info[client_path.name][sample_name].get('insert','')
+            reference = str(client_info[client_path.name][sample_name].get('reference',''))
+            insert = str(client_info[client_path.name][sample_name].get('insert',''))
             print(','.join([alias,barcode,'test_sample','7000','',reference,insert]), file=fout)
     return client_sample_sheet_path
 

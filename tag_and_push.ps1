@@ -1,8 +1,8 @@
-$VER = "v2.00.017"
+$VER = "v2.00.018"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: reference and insert were lists not paths
+* FIXED: reference and insert were paths not strings
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
