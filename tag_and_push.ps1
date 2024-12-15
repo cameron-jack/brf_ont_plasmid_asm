@@ -2,7 +2,7 @@ $VER = "v2.00.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: argument name written as string
+* FIXED: bogus dictionary syntax
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

@@ -225,7 +225,7 @@ def main():
             if not seq_fns:
                 print(f'No FASTQ (.fq/.fastq/.fq.gz/.fastq.gz files found for client {cdir.name} sample {sd.name}')
                 exit(1)
-            client_info[cdir.name][sd.name]['fastq_files':seq_fns]
+            client_info[cdir.name][sd.name]['fastq_files'] = seq_fns
 
             ref_dir = sd.joinpath('reference')  # optional
             insert_dir = sd.joinpath('insert')  # optional
