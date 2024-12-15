@@ -11,7 +11,7 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
     with open(run_path,'wt') as fout:
         print('#!/bin/bash', file=fout)
         for csp in client_script_paths:
-            print(f'./{csp}', file=fout)
+            print(f'./{csp.name}', file=fout)
 
 
 def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix='unfilt_', min_length=150, min_quality=10):
@@ -78,7 +78,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'', file=fout)
         print(f'# Uncomment any of the filtering script paths below to run filtering prior to plasmid assembly', file=fout)
         for fsp in filter_script_paths:
-            print(f'#{fsp}', file=fout)
+            print(f'#{fsp.parent.name/fsp.name}', file=fout)
         print('', file=fout)
         print('# ONT wf-clone-validation pipeline', file=fout)
         print(f'{nextflow_path} \\', file=fout)
@@ -90,6 +90,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'', file=fout)
         assembly_fp = ''  # path to assembled plasmid
         print(f'# map each original FASTQ back to assembly')
+        print(f'{client_info=}')
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
                 fo = rename_fastq_to_bam(fp)

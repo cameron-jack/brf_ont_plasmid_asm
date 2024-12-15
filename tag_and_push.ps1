@@ -1,8 +1,9 @@
-$VER = "v2.00.010"
+$VER = "v2.00.011"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: syntax boo-boo
+* FIXED: path to filt scripts
+* Added debug for client_info object
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
