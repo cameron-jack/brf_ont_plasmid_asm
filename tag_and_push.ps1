@@ -1,4 +1,4 @@
-$VER = "v2.00.001"
+$VER = "v2.00.002"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
