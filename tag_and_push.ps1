@@ -1,8 +1,8 @@
-$VER = "v2.00.007"
+$VER = "v2.00.008"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: another Path bug
+* FIXED: script naming needed f-string
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
