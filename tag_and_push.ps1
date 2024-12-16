@@ -1,8 +1,8 @@
-$VER = "v2.00.019"
+$VER = "v2.00.020"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: chmod all generated scripts as executable
+* NEW: log file string generation
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

@@ -17,6 +17,19 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
     print(f'Generated top-level script {run_path}')
 
 
+def logstr_from_fastq_path(fp):
+    """
+    Return the str to a log file renames from the fastq path
+    """
+    suffix = ['.fq','.fq.gz','.fastq','.fastq.gz']
+    fq_str = str(fp).lower()
+    for s in suffix:
+        if fq_str.endswith(s):
+            log_str = fq_str.replace(s,'.log')
+            return log_str
+    return ''
+
+
 def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix='unfilt_', min_length=150, min_quality=10):
     """
     client_path - Path to client directory
@@ -34,12 +47,15 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
         with open(filter_script_path, 'wt') as fout:
             print('#!/bin/bash', file=fout)
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
+                log_path = logstr_from_fastq_path(fp) 
+                if not log_path:
+                    log_path = '/dev/null'
                 prefilt_path = fp.parent / (str(prefilter_prefix) + fp.name)
                 print(f'if [[ ! -e {prefilt_path}]]', file=fout)
                 print(f'then', file=fout)
                 print(f'    mv {fp} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
-                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {fp} 2> {fp}.log', file=fout)
+                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {fp} 2> {log_path}', file=fout)
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
