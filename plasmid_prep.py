@@ -1,5 +1,6 @@
 from argparse import ArgumentParser as AP
 from pathlib import Path
+import os
 
 
 def generate_complete_run_script(top_dir_path, client_script_paths):
@@ -12,6 +13,7 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
         print('#!/bin/bash', file=fout)
         for csp in client_script_paths:
             print(f'./{csp.name}', file=fout)
+    os.chmod(run_path, 0o755)
     print(f'Generated top-level script {run_path}')
 
 
@@ -38,6 +40,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
                 print(f'    mv {fp} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
                 print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {fp} 2> {fp}.log', file=fout)
+        os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
 
@@ -98,6 +101,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
                 #print(f'Found fastq {fp=}')
                 fo = rename_fastq_to_bam(fp)
                 print(f'{minimap2_path} -X map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} --write-index - ', file=fout)
+    os.chmod(client_script_path, 0o755)
     return client_script_path
 
 

@@ -1,8 +1,8 @@
-$VER = "v2.00.018"
+$VER = "v2.00.019"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: reference and insert were paths not strings
+* FIXED: chmod all generated scripts as executable
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
