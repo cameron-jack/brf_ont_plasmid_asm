@@ -122,28 +122,56 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
     return client_script_path
 
 
-def generate_sample_sheet(client_info, client_path):
+def generate_sample_sheets(client_info, client_path):
     """
+    Generate two sample sheets, one with reference and one without.
+    If we ever want to use insert references then we'll need to add these separately too
     comma separate sample sheet file covering all client samples
+
     Inputs:
         client_info - dictionary of clients and samples
         client_path - full path to client directory
+    Returns:
+        client_sample_sheet_noref_path, client_sample_sheet_ref_path
+
     note that 'barcode' is the name of the sample directory which contains fastq files for that sample
     cut_site is an optional cut site to check linearisation efficiency
     approx_size defaults to 7000
     type defaults to 'test_sample' but could also be 'postive_control','negative_control','no_template_control'
     headers: alias, barcode, type, approx_size, cut_site, full_reference, insert_reference
     """
-    client_sample_sheet_path = client_path.parent / (str(client_path.name) + '_sample_sheet.csv')
-    with open(client_sample_sheet_path, 'wt') as fout:
-        print(','.join(['alias','barcode','type','approx_size','cut_site','full_reference','insert_reference']), file=fout)
-        for sample_name in client_info[client_path.name]:
-            alias = sample_name
-            barcode = sample_name
-            reference = str(client_info[client_path.name][sample_name].get('reference',''))
-            insert = str(client_info[client_path.name][sample_name].get('insert',''))
-            print(','.join([alias,barcode,'test_sample','7000','',reference,insert]), file=fout)
-    return client_sample_sheet_path
+    client_sample_sheet_noref_path = None
+    client_sample_sheet_ref_path = None
+    samples_with_references = []
+    samples_without_references = []
+    for sample_name in client_info[client_path.name]:
+        reference = str(client_info[client_path.name][sample_name].get('reference',''))
+        if reference:
+            samples_with_references.append(sample_name)
+        else:
+            samples_without_references.append(sample_name)
+    
+    if samples_with_references:
+        client_sample_sheet_ref_path = client_path.parent / (str(client_path.name) + '_sample_sheet_ref.csv')
+        with open(client_sample_sheet_ref_path, 'wt') as fout:
+            print(','.join(['alias','barcode','type','approx_size','full_reference']), file=fout)
+            for sample_name in samples_with_references:
+                alias = sample_name
+                barcode = sample_name
+                reference = str(client_info[client_path.name][sample_name].get('reference',''))
+                #insert = str(client_info[client_path.name][sample_name].get('insert',''))
+                print(','.join([alias,barcode,'test_sample','7000',reference]), file=fout)
+
+    if samples_without_references:
+        client_sample_sheet_noref_path = client_path.parent / (str(client_path.name) + '_sample_sheet_noref.csv')
+        with open(client_sample_sheet_noref_path, 'wt') as fout:
+            print(','.join(['alias','barcode','type','approx_size']), file=fout)
+            for sample_name in samples_without_references:
+                alias = sample_name
+                barcode = sample_name
+                print(','.join([alias,barcode,'test_sample','7000']), file=fout)
+    
+    return client_sample_sheet_noref_path, client_sample_sheet_ref_path
 
 
 def check_fastq_name(fn):
@@ -298,14 +326,23 @@ def main():
                     exit(1)
                 client_info[cdir.name][sd.name]['insert'] = insert_fp[0]
 
-        # generate the client sample sheet and run script
-        client_sample_sheet_path = generate_sample_sheet(client_info, cdir)
-        print(f'Created {client_sample_sheet_path} for client {cdir.name}')
-        client_run_script_path = generate_client_run_script(client_sample_sheet_path, client_info, cdir, 
-                nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                args.prefilter_prefix, minimap2_fp, samtools_fp)
-        print(f'Created {client_run_script_path} for client {cdir.name}')
-        client_script_paths.append(client_run_script_path)
+        # generate client sample sheets without, and with, references
+        client_sample_sheet_noref_path, client_sample_sheet_ref_path = generate_sample_sheets(client_info, cdir)
+        if client_sample_sheet_noref_path:
+            print(f'Created sample sheet with no reference sequences {client_sample_sheet_noref_path} for client {cdir.name}')
+            client_run_script_noref_path = generate_client_run_script(client_sample_sheet_noref_path, client_info, cdir, 
+                    nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
+                    args.prefilter_prefix, minimap2_fp, samtools_fp)
+            print(f'Created no reference script {client_run_script_noref_path} for client {cdir.name}')
+            client_script_paths.append(client_run_script_noref_path)
+        if client_sample_sheet_ref_path:
+            print(f'Created sample sheet with reference sequences {client_sample_sheet_ref_path} for client {cdir.name}')
+            client_run_script_ref_path = generate_client_run_script(client_sample_sheet_ref_path, client_info, cdir, 
+                    nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
+                    args.prefilter_prefix, minimap2_fp, samtools_fp)
+            print(f'Created with reference script {client_run_script_ref_path} for client {cdir.name}')
+            client_script_paths.append(client_run_script_ref_path)
+        
     # generate an overall run script that launches everything else
     generate_complete_run_script(args.plasmid_dir, client_script_paths)
 

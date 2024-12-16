@@ -1,8 +1,8 @@
-$VER = "v2.00.025"
+$VER = "v2.01.000"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: local path issue
+* NEW: duplicated work scripts to separate out runs with reference sequences and without reference sequences
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
