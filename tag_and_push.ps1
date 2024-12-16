@@ -1,8 +1,8 @@
-$VER = "v2.00.024"
+$VER = "v2.00.025"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: non-standard samtools option removed
+* FIXED: local path issue
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

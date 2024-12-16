@@ -217,7 +217,7 @@ def main():
     parser.add_argument('--purge', action='store_true', help='Remove all old scripts and sample sheets from the top level plasmid directory before continuing')
     args = parser.parse_args()
 
-    local_path = Path(os.path.realpath(__file__))
+    local_path = Path(os.path.realpath(__file__)).parent
     minimap2_fp = local_path/args.minimap2
     samtools_fp = local_path/args.samtools
     nextflow_fp = local_path/args.nextflow
