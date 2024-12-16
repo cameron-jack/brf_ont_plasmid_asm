@@ -11,6 +11,9 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
     run_path = Path(top_dir_path) / 'run_plasmids.sh'
     with open(run_path,'wt') as fout:
         print('#!/bin/bash', file=fout)
+        print('', file=fout)
+        print('# this loads the conda environment', file=fout)
+        print('source ~/.bashrc', file=fout)
         for csp in client_script_paths:
             print(f'{top_dir_path}/{csp.name}', file=fout)
     os.chmod(run_path, 0o755)

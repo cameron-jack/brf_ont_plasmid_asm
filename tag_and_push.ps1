@@ -1,8 +1,8 @@
-$VER = "v2.01.000"
+$VER = "v2.01.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: duplicated work scripts to separate out runs with reference sequences and without reference sequences
+* NEW: top-level run script loads conda environment
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
