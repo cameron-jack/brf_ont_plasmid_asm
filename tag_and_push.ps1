@@ -1,8 +1,8 @@
-$VER = "v2.00.021"
+$VER = "v2.00.022"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: expansion of path information
+* FIXED: incorrect path syntax
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

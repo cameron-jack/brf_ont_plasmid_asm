@@ -216,7 +216,7 @@ def main():
     parser.add_argument('--purge', action='store_true', help='Remove all old scripts and sample sheets from the top level plasmid directory before continuing')
     args = parser.parse_args()
 
-    p = Path(args.plasmid_dir.absolute())
+    p = Path(args.plasmid_dir).absolute()
     if not p.exists():
         print(f'Error: no such directory {args.plasmid_dir}')
         exit(1)
