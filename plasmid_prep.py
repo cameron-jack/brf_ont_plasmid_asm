@@ -206,16 +206,20 @@ def main():
     parser = AP()
     parser.add_argument('plasmid_dir', help='Path to folder containing all client plasmid data')
     parser.add_argument('-v', '--verbose', help='Display more information about the prep process')
-    parser.add_argument('--minimap2_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/minimap2', help='Path to minimap2')
-    parser.add_argument('--samtools_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/samtools', help='Path to samtools')
+    parser.add_argument('--minimap2', default='bin/minimap2', help='Path to minimap2')
+    parser.add_argument('--samtools', default='bin/samtools', help='Path to samtools')
     parser.add_argument('--filter_path', default='/home/brf/lib/miniconda3/bin/NanoFilt', help='Path to nanofilt or chopper')
-    parser.add_argument('--nextflow_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
+    parser.add_argument('--nextflow', default='bin/nextflow', help='Path to nextflow')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
     parser.add_argument('--pipeline_version', default='v1.6.0', help='wf-clone-validation pipeline version')
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
     parser.add_argument('--purge', action='store_true', help='Remove all old scripts and sample sheets from the top level plasmid directory before continuing')
     args = parser.parse_args()
 
+    local_path = Path(os.path.realpath(__file__))
+    minimap2_fp = local_path/args.minimap2
+    samtools_fp = local_path/args.samtools
+    nextflow_fp = local_path/args.nextflow
     p = Path(args.plasmid_dir).absolute()
     if not p.exists():
         print(f'Error: no such directory {args.plasmid_dir}')
@@ -297,8 +301,8 @@ def main():
         client_sample_sheet_path = generate_sample_sheet(client_info, cdir)
         print(f'Created {client_sample_sheet_path} for client {cdir.name}')
         client_run_script_path = generate_client_run_script(client_sample_sheet_path, client_info, cdir, 
-                args.nextflow_path, args.pipeline_path, args.pipeline_version, args.filter_path, args.prefilter_prefix,
-                args.minimap2_path, args.samtools_path)
+                nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
+                args.prefilter_prefix, minimap2_fp, samtools_fp)
         print(f'Created {client_run_script_path} for client {cdir.name}')
         client_script_paths.append(client_run_script_path)
     # generate an overall run script that launches everything else
