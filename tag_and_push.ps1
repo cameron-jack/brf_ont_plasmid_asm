@@ -1,8 +1,8 @@
-$VER = "v2.00.020"
+$VER = "v2.00.021"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: log file string generation
+* NEW: expansion of path information
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

@@ -12,7 +12,7 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
     with open(run_path,'wt') as fout:
         print('#!/bin/bash', file=fout)
         for csp in client_script_paths:
-            print(f'./{csp.name}', file=fout)
+            print(f'{top_dir_path}/{csp.name}', file=fout)
     os.chmod(run_path, 0o755)
     print(f'Generated top-level script {run_path}')
 
@@ -106,7 +106,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'{nextflow_path} \\', file=fout)
         print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
         print(f'  --fastq {client_path} \\', file=fout)
-        print(f'  --outdir {out_dn} \\', file=fout)
+        print(f'  --output {out_dn} \\', file=fout)
         print(f'  --sample_sheet {client_sample_sheet_path} \\', file=fout)
         print(f'  -profile singularity', file=fout)
         print(f'', file=fout)
@@ -216,7 +216,7 @@ def main():
     parser.add_argument('--purge', action='store_true', help='Remove all old scripts and sample sheets from the top level plasmid directory before continuing')
     args = parser.parse_args()
 
-    p = Path(args.plasmid_dir)
+    p = Path(args.plasmid_dir.absolute())
     if not p.exists():
         print(f'Error: no such directory {args.plasmid_dir}')
         exit(1)
