@@ -109,7 +109,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         print(f'{nextflow_path} \\', file=fout)
         print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
         print(f'  --fastq {client_path} \\', file=fout)
-        print(f'  --output {out_dn} \\', file=fout)
+        print(f'  --out_dir {out_dn} \\', file=fout)
         print(f'  --sample_sheet {client_sample_sheet_path} \\', file=fout)
         print(f'  -profile singularity', file=fout)
         print(f'', file=fout)

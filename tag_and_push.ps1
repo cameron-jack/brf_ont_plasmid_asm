@@ -1,8 +1,8 @@
-$VER = "v2.01.002"
+$VER = "v2.01.003"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: minimap2 parameter is -x not -X
+* FIXED: out_dir instead of --output
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
