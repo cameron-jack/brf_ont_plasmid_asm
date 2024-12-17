@@ -1,8 +1,8 @@
-$VER = "v2.01.007"
+$VER = "v2.01.008"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: client scripts separated for with and without ref
+* FIXED: removed unnecessary parameter
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

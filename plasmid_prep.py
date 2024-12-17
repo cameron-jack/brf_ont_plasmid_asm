@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 
 
-def generate_complete_run_script(top_dir_path, client_script_paths, ref):
+def generate_complete_run_script(top_dir_path, client_script_paths):
     """
     Make a top-level script that launches all client scripts sequentially
     top_dir_path = client_dir_path.parent
