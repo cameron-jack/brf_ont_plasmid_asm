@@ -220,7 +220,15 @@ def main():
     Within that are all the FASTQ sequences files for that plasmid, an optional 
     directory called "reference" - if you have a reference - and another optional directory 
     called "insert" - for if you have a short fragment that you're trying to find in the plasmid.
- 
+
+    top-level_dir 
+        -> clientA
+            -> barcode01 (fastqs)
+                -> reference (fasta)  optional
+            -> barcode02 (fastqs)
+        -> clientB
+            -> barcode03 (fastqs)
+
     You'd then a Python script called "plasmid_prep.py" which would take the path to that 
     top-level directory. It would then make per-client tables that inform the pipeline how 
     to run the samples, and would print the paths to each of these on the screen, so that 
@@ -260,7 +268,7 @@ def main():
         print(f'Error: {args.plasmid_dir} is not a directory')
         exit(1)
     
-    client_dirs = [d for d in p.glob('*') if d.is_dir()]
+    client_dirs = [d for d in p.glob('*') if d.is_dir() and not str(d.name).startswith('.')]
     if not client_dirs:
         print(f'Error: no client directories found in {args.plasmid_dir}')
         exit(1)
@@ -283,7 +291,7 @@ def main():
     client_script_paths = []
     for cdir in client_dirs:
         client_info[cdir.name] = {}
-        sample_dirs = [d for d in cdir.glob('*') if d.is_dir()]
+        sample_dirs = [d for d in cdir.glob('*') if d.is_dir() and not str(d.name).startswith('.')]
         if not sample_dirs:
             print(f'Skipping client {cdir}, no sample directories found')
             continue

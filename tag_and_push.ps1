@@ -1,8 +1,8 @@
-$VER = "v2.01.003"
+$VER = "v2.01.004"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: out_dir instead of --output
+* FIXED: skips hidden .nextflow directory
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
