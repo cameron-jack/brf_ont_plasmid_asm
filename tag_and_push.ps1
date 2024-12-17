@@ -1,8 +1,8 @@
-$VER = "v2.01.004"
+$VER = "v2.01.005"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: skips hidden .nextflow directory
+* FIXED: more temp dir options skipped
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
