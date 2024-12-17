@@ -64,9 +64,10 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
     return filter_script_paths
 
 
-def generate_client_run_script(client_sample_sheet_path, client_info, client_path, 
+def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet_noref_path, client_info, 
+        client_path, 
         nextflow_path, pipeline_path, pipeline_version, filter_path, prefilter_prefix,
-        minimap2_path, samtools_path, ref=False):
+        minimap2_path, samtools_path):
     """
     Inputs:
         client_sample_sheet_path - path to client sample sheet
@@ -95,11 +96,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
 
     """
     filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix)
-    client_script_path = client_path.parent/f'run_{client_path.name}'
-    if ref:
-        client_script_path = Path(str(client_script_path) + '_ref.sh')
-    else:
-        client_script_path = Path(str(client_script_path) + '_noref.sh')
+    client_script_path = client_path.parent/f'run_{client_path.name}.sh'
     out_dn = client_path/"output"
     #print(f'{client_info=}')
     with open(client_script_path, 'wt') as fout:
@@ -109,14 +106,24 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
         for fsp in filter_script_paths:
             print(f'#{client_path.name}/{fsp.name}', file=fout)
         print('', file=fout)
-        print('# ONT wf-clone-validation pipeline', file=fout)
-        print(f'{nextflow_path} \\', file=fout)
-        print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
-        print(f'  --fastq {client_path} \\', file=fout)
-        print(f'  --out_dir {out_dn} \\', file=fout)
-        print(f'  --sample_sheet {client_sample_sheet_path} \\', file=fout)
-        print(f'  -profile singularity', file=fout)
-        print(f'', file=fout)
+        if client_sample_sheet_ref_path:
+            print('# ONT wf-clone-validation pipeline with reference', file=fout)
+            print(f'{nextflow_path} \\', file=fout)
+            print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
+            print(f'  --fastq {client_path} \\', file=fout)
+            print(f'  --out_dir {out_dn} \\', file=fout)
+            print(f'  --sample_sheet {client_sample_sheet_ref_path} \\', file=fout)
+            print(f'  -profile singularity', file=fout)
+            print(f'', file=fout)
+        if client_sample_sheet_noref_path:
+            print('# ONT wf-clone-validation pipeline without reference', file=fout)
+            print(f'{nextflow_path} \\', file=fout)
+            print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
+            print(f'  --fastq {client_path} \\', file=fout)
+            print(f'  --out_dir {out_dn} \\', file=fout)
+            print(f'  --sample_sheet {client_sample_sheet_noref_path} \\', file=fout)
+            print(f'  -profile singularity', file=fout)
+            print(f'', file=fout)
         print(f'# map each original FASTQ back to assembly', file=fout)
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
@@ -125,6 +132,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
                 fo = rename_fastq_to_bam(fp)
                 print(f'{minimap2_path} -x map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} - ', file=fout)
                 print(f'{samtools_path} index {fo}', file=fout)
+                print(f'', file=fout)
     os.chmod(client_script_path, 0o755)
     return client_script_path
 
@@ -345,18 +353,15 @@ def main():
         client_sample_sheet_noref_path, client_sample_sheet_ref_path = generate_sample_sheets(client_info, cdir)
         if client_sample_sheet_noref_path:
             print(f'Created sample sheet without reference sequences {client_sample_sheet_noref_path} for client {cdir.name}')
-            client_run_script_noref_path = generate_client_run_script(client_sample_sheet_noref_path, client_info, cdir, 
-                    nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                    args.prefilter_prefix, minimap2_fp, samtools_fp, ref=False)
-            print(f'Created script without reference {client_run_script_noref_path} for client {cdir.name}')
-            client_script_paths.append(client_run_script_noref_path)
         if client_sample_sheet_ref_path:
             print(f'Created sample sheet with reference sequences {client_sample_sheet_ref_path} for client {cdir.name}')
-            client_run_script_ref_path = generate_client_run_script(client_sample_sheet_ref_path, client_info, cdir, 
-                    nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                    args.prefilter_prefix, minimap2_fp, samtools_fp, ref=True)
-            print(f'Created script with reference {client_run_script_ref_path} for client {cdir.name}')
-            client_script_paths.append(client_run_script_ref_path)
+
+        client_run_script_path = generate_client_run_script(client_sample_sheet_ref_path, 
+                client_sample_sheet_noref_path, client_info, cdir, 
+                nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
+                args.prefilter_prefix, minimap2_fp, samtools_fp, ref=False)
+        print(f'Created script {client_run_script_path} for client {cdir.name}')
+        client_script_paths.append(client_run_script_path)
         
     # generate an overall run script that launches everything else
     generate_complete_run_script(args.plasmid_dir, client_script_paths)
