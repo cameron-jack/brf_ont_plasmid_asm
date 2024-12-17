@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 
 
-def generate_complete_run_script(top_dir_path, client_script_paths):
+def generate_complete_run_script(top_dir_path, client_script_paths, ref):
     """
     Make a top-level script that launches all client scripts sequentially
     top_dir_path = client_dir_path.parent
@@ -66,7 +66,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
 
 def generate_client_run_script(client_sample_sheet_path, client_info, client_path, 
         nextflow_path, pipeline_path, pipeline_version, filter_path, prefilter_prefix,
-        minimap2_path, samtools_path):
+        minimap2_path, samtools_path, ref=False):
     """
     Inputs:
         client_sample_sheet_path - path to client sample sheet
@@ -95,7 +95,11 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
 
     """
     filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix)
-    client_script_path = client_path.parent/f'run_{client_path.name}.sh'
+    client_script_path = client_path.parent/f'run_{client_path.name}'
+    if ref:
+        client_script_path = Path(str(client_script_path) + '_ref.sh')
+    else:
+        client_script_path = Path(str(client_script_path) + '_noref.sh')
     out_dn = client_path/"output"
     #print(f'{client_info=}')
     with open(client_script_path, 'wt') as fout:
@@ -340,18 +344,18 @@ def main():
         # generate client sample sheets without, and with, references
         client_sample_sheet_noref_path, client_sample_sheet_ref_path = generate_sample_sheets(client_info, cdir)
         if client_sample_sheet_noref_path:
-            print(f'Created sample sheet with no reference sequences {client_sample_sheet_noref_path} for client {cdir.name}')
+            print(f'Created sample sheet without reference sequences {client_sample_sheet_noref_path} for client {cdir.name}')
             client_run_script_noref_path = generate_client_run_script(client_sample_sheet_noref_path, client_info, cdir, 
                     nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                    args.prefilter_prefix, minimap2_fp, samtools_fp)
-            print(f'Created no reference script {client_run_script_noref_path} for client {cdir.name}')
+                    args.prefilter_prefix, minimap2_fp, samtools_fp, ref=False)
+            print(f'Created script without reference {client_run_script_noref_path} for client {cdir.name}')
             client_script_paths.append(client_run_script_noref_path)
         if client_sample_sheet_ref_path:
             print(f'Created sample sheet with reference sequences {client_sample_sheet_ref_path} for client {cdir.name}')
             client_run_script_ref_path = generate_client_run_script(client_sample_sheet_ref_path, client_info, cdir, 
                     nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                    args.prefilter_prefix, minimap2_fp, samtools_fp)
-            print(f'Created with reference script {client_run_script_ref_path} for client {cdir.name}')
+                    args.prefilter_prefix, minimap2_fp, samtools_fp, ref=True)
+            print(f'Created script with reference {client_run_script_ref_path} for client {cdir.name}')
             client_script_paths.append(client_run_script_ref_path)
         
     # generate an overall run script that launches everything else

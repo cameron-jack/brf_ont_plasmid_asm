@@ -1,8 +1,8 @@
-$VER = "v2.01.006"
+$VER = "v2.01.007"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: more temp dir options skipped again
+* FIXED: client scripts separated for with and without ref
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
