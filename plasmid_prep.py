@@ -119,7 +119,7 @@ def generate_client_run_script(client_sample_sheet_path, client_info, client_pat
                 assembly_fp = f'{out_dn}/{sample_name}.final.fasta'  # path to assembled plasmid
                 #print(f'Found fastq {fp=}')
                 fo = rename_fastq_to_bam(fp)
-                print(f'{minimap2_path} -X map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} - ', file=fout)
+                print(f'{minimap2_path} -x map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} - ', file=fout)
                 print(f'{samtools_path} index {fo}', file=fout)
     os.chmod(client_script_path, 0o755)
     return client_script_path

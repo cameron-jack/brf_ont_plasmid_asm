@@ -1,8 +1,8 @@
-$VER = "v2.01.001"
+$VER = "v2.01.002"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: top-level run script loads conda environment
+* NEW: minimap2 parameter is -x not -X
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
