@@ -359,7 +359,7 @@ def main():
         client_run_script_path = generate_client_run_script(client_sample_sheet_ref_path, 
                 client_sample_sheet_noref_path, client_info, cdir, 
                 nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                args.prefilter_prefix, minimap2_fp, samtools_fp, ref=False)
+                args.prefilter_prefix, minimap2_fp, samtools_fp)
         print(f'Created script {client_run_script_path} for client {cdir.name}')
         client_script_paths.append(client_run_script_path)
         
