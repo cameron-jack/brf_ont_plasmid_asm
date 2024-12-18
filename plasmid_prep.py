@@ -1,6 +1,8 @@
 from argparse import ArgumentParser as AP
 from pathlib import Path
 import os
+from datetime import datetime
+from shutil import copy2, rmtree
 
 
 def generate_complete_run_script(top_dir_path, client_script_paths):
@@ -222,10 +224,180 @@ def rename_fastq_to_bam(fp):
         if str(fp).lower().endswith(s):
             return Path(str(fp).replace(s,'.bam'))
 
+def parse_samplesheet(samplesheet):
+    """
+    Reads a plasmid sample sheet: e.g. 
+    client,alias,barcode,reference
+    A,plasmid1,barcode21,/path/to/reference.fa
+    A,plasmid2,barcode22,ref.fasta
+    B,plasmid3,barcode23,
+    C,plasmid4,barcode24,
+
+    Returns a dict [client]={barcode:{'alias':'','ref':'',fastqs:[]}}
+    """
+    if not Path(samplesheet).exists():
+        print(f'Samplesheet {samplesheet} does not exist')
+        exit(1)
+    if not Path(samplesheet).is_file():
+        print(f'Samplesheet {samplesheet} is not a file. Did you swap the parameters by mistake?')
+        exit(1)
+
+    client_info = {}
+    client_barcode_aliases = {}  # per client set of (barcode,alias) to ensure uniqueness
+    with open(samplesheet, 'rt') as f:
+        for i,line in enumerate(f):
+            cols = line.split(',')
+            if i==0 and cols[0].lower().startswith('client'):
+                continue  # header
+            if len(cols) < 3:
+                continue  # we must have at least 3 columns
+            client = cols[0].strip().replace(' ','_')
+            alias = cols[1].strip().replace(' ','_')
+            barcode = cols[2].strip()
+            ref = ''
+            if len(cols) > 3:  # optional reference in 4th column, ignore later columns 
+                ref = cols[3].strip()
+            if client not in client_info:
+                client_info[client] = {}
+                client_barcode_aliases[client] = set()
+            if (barcode,alias) not in client_barcode_aliases[client]:
+                client_barcode_aliases[client].add((barcode,alias))
+            else:
+                print(f'barcode {barcode} and alias {alias} are not a unique combination in client {client}')
+                exit(1)
+            if barcode not in client_info[client]:
+                client_info[client][barcode] = {'alias':alias,'ref':ref,'fastqs':[]}
+            else:
+                print(f'barcode {barcode} must be unique for client {client}')
+                exit(1)
+    return client_info
+
+
+# now iterate through the PromethION directory tree looking for barcodes
+def get_barcode_dirs(p, all_barcodes, chosen_dirs):
+    """
+    iterate through directories finding all the barcode dirs we want
+    """
+    dirs = [x for x in p.iterdir() if x.is_dir()]
+    for d in dirs:
+        if d.name == 'fastq_pass':
+            bc_dirs = [x for x in d.iterdir() if x.is_dir() if x.name in all_barcodes]
+            if bc_dirs:
+                chosen_dirs.extend(bc_dirs)
+        else:
+            get_barcode_dirs(d, all_barcodes, chosen_dirs)
+    return chosen_dirs
+
+
+def parse_input_dirs(prom_dir, client_info):
+    """
+    Scans a PromethION directory structure:
+        Mla7_45_pool/
+            -> 20241121_1136_3C_PAW74316_2656d858/
+                -> fastq_pass/
+                    -> barcode21/ (fastqs)
+    Should be able to find everything listed in client_info
+    returns a dict copy_dirs[client] = {barcode:path_to_barcode_dir}}
+    """
+    pdp = Path(prom_dir)
+    if not pdp.exists():
+        print(f"PromethION directory {pdp} does not exist")
+        exit(1)
+    if not pdp.is_dir():
+        print(f"PromethION directory {pdp} is not a directory")
+        exit(1)
+
+    copy_dirs = {}
+    all_barcodes = set()
+    for client in client_info:
+        copy_dirs[client] = {}
+        for barcode in client_info[client]:
+            copy_dirs[client][barcode] = ''  # src dirname
+            all_barcodes.add(barcode)
+
+    barcode_dirs = get_barcode_dirs(pdp, all_barcodes, [])
+    bcds = {bcd.name:bcd for bcd in barcode_dirs}
+    bcd_names = set(bcds.keys())
+    if all_barcodes.difference(bcd_names):
+        print(f"Barcodes not found {all_barcodes.difference(bcd_names)}")
+        exit(2)
+    if bcd_names.difference(all_barcodes):
+        print(f"Extra barcodes found {bcd_names.difference(all_barcodes)}")
+        exit(2)
+    
+    for client in copy_dirs:
+        for barcode in copy_dirs[client]:
+            copy_dirs[client][barcode] = bcds[barcode]
+
+    return copy_dirs
+
+
+def create_new_structure(plasmid_dir, client_info, copy_dirs):
+    """
+    Create new plasmid directory tree
+    plasmid_run_20241217/ 
+        -> clientA/
+            -> barcode01/ (fastqs)
+                -> reference/ (fasta)  optional
+            -> barcode02/ (fastqs)
+        -> clientB/
+            -> barcode03/ (fastqs)
+    """
+    try:
+        # make directories and copy files
+        if not plasmid_dir.exists():
+            plasmid_dir.mkdir()
+        for client in client_info:
+            p = plasmid_dir / client
+            if not p.exists():
+                p.mkdir()
+            for barcode in client_info[client]:
+                bp = p/barcode
+                if not bp.exists():
+                    bp.mkdir()
+                fps = [copy_dirs[client][barcode]/f for f in os.listdir(copy_dirs[client][barcode])]
+                print(f'\n{fps=}\n')
+                for fp in fps:
+                    copy2(fp, plasmid_dir/client/barcode/fp.name)
+                ref = client_info[client][barcode]['ref']
+                if ref:
+                    ref_dp = bp/'reference'
+                    if not ref_dp.exists():
+                        ref_dp.mkdir()
+                    copy2(ref, ref_dp/ref)
+    except Exception as exc:
+        print(f'Failed to create new plasmid experiment directories {exc}')
+        exit(3)
+    return True
+            
 
 def main():
     """
     Replacement of original 'simple plasmid' project.
+
+    Reads a plasmid sample sheet: e.g. 
+        client,alias,barcode,reference
+        A,plasmid1,barcode21,/path/to/reference.fa
+        A,plasmid2,barcode22,ref.fasta
+        B,plasmid3,barcode23,
+        C,plasmid4,barcode24,
+
+    Scans a PromethION directory structure:
+        Mla7_45_pool/
+            -> 20241121_1136_3C_PAW74316_2656d858/
+                -> fastq_pass/
+                    -> barcode21/ (fastqs)
+
+    And creates the required directory structure and all scripts, etc, for the ONT
+    wf-clone-validation pipeline:
+    plasmid_run_20241217/ 
+        -> clientA/
+            -> barcode01/ (fastqs)
+                -> reference/ (fasta)  optional
+            -> barcode02/ (fastqs)
+        -> clientB/
+            -> barcode03/ (fastqs)
+
     Requires one top-level directory for all the client plasmids you want to run in one go. 
     Inside, you'd have one directory for each client. In each client directory you'd have 
     an experiment directory for each separate plasmid (the barcode name, or sample name). 
@@ -233,77 +405,63 @@ def main():
     directory called "reference" - if you have a reference - and another optional directory 
     called "insert" - for if you have a short fragment that you're trying to find in the plasmid.
 
-    top-level_dir 
-        -> clientA
-            -> barcode01 (fastqs)
-                -> reference (fasta)  optional
-            -> barcode02 (fastqs)
-        -> clientB
-            -> barcode03 (fastqs)
-
-    You'd then a Python script called "plasmid_prep.py" which would take the path to that 
-    top-level directory. It would then make per-client tables that inform the pipeline how 
-    to run the samples, and would print the paths to each of these on the screen, so that 
-    you can then customise them if needed (unlikely).
- 
-    It would also make a shell script for that top-level directory, which would run each of 
-    the stages of the pipeline for each of the clients and their samples. It'd just run each 
-    in turn. I think you'd be looking at perhaps being able to get through 10 plasmids per 
-    hour. It will run Nanofilt, the wf-clone-validation pipeline, 
-    and minimap2 (just the same as the existing pipeline).
- 
-    There should be one report per client.
     """
-
+    dt = datetime.today().strftime('%Y%m%d')
+    plasmid_dn = f'plasmid_run_{dt}'
+    
     parser = AP()
-    parser.add_argument('plasmid_dir', help='Path to folder containing all client plasmid data')
+    parser.add_argument('prom_dir', help='Path to input PromethION sequencing')
+    parser.add_argument('-s','--samplesheet', required=True, help='Path to 3 or 4 column samplesheet to set up experiment')
+    parser.add_argument('-p', '--plasmid_dir', default=plasmid_dn, help='Path to output folder containing all client plasmid data')
     parser.add_argument('-v', '--verbose', help='Display more information about the prep process')
-    parser.add_argument('--minimap2', default='bin/minimap2', help='Path to minimap2')
-    parser.add_argument('--samtools', default='bin/samtools', help='Path to samtools')
+    parser.add_argument('-o','--overwrite', action='store_true', help='Overwrite existing plasmid directory')
+    parser.add_argument('--minimap2', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/minimap2', help='Path to minimap2')
+    parser.add_argument('--samtools', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/samtools', help='Path to samtools')
     parser.add_argument('--filter_path', default='/home/brf/lib/miniconda3/bin/NanoFilt', help='Path to nanofilt or chopper')
-    parser.add_argument('--nextflow', default='bin/nextflow', help='Path to nextflow')
+    parser.add_argument('--nextflow', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
     parser.add_argument('--pipeline_version', default='v1.6.0', help='wf-clone-validation pipeline version')
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
-    parser.add_argument('--purge', action='store_true', help='Remove all old scripts and sample sheets from the top level plasmid directory before continuing')
+    
     args = parser.parse_args()
 
-    local_path = Path(os.path.realpath(__file__)).parent
-    minimap2_fp = local_path/args.minimap2
-    samtools_fp = local_path/args.samtools
-    nextflow_fp = local_path/args.nextflow
-    p = Path(args.plasmid_dir).absolute()
-    if not p.exists():
-        print(f'Error: no such directory {args.plasmid_dir}')
-        exit(1)
-    elif not p.is_dir():
-        print(f'Error: {args.plasmid_dir} is not a directory')
+    prom_dir = Path(args.prom_dir)
+    if not prom_dir.exists():
+        print(f'PromethION sequencing directory {prom_dir} does not exist')
         exit(1)
     
-    client_dirs = [d for d in p.glob('*') if d.is_dir() and str(d.name) not in ['.nextflow','tmp','[:]','work']]
-    if not client_dirs:
-        print(f'Error: no client directories found in {args.plasmid_dir}')
-        exit(1)
-    if args.verbose:
-        print(f'Client directories found: {client_dirs}')
+    plasmid_dir = Path(args.plasmid_dir)
+    if plasmid_dir.exists():
+        if not args.overwrite:
+            print(f'Plasmid run directory {plasmid_dir} already exists. '+\
+                    f'Please delete it, choose to overwrite it, or name a different output directory')
+            exit(1)
+        else:
+            rmtree(plasmid_dir)
+    plasmid_dir.mkdir()
 
-    if args.purge:
-        old_files = [f for f in p.glob('*') if f.is_file() and \
-                (str(f).endswith('.csv') or str(f).endswith('.sh'))]
-        for d in client_dirs:
-            for fp in d.glob('*'):
-                if fp.is_file() and str(fp).endswith(f'_filt.sh'):
-                    old_files.append(fp)
-        for old_fp in old_files:
-            print(f'Purging existing file {old_fp}')
-            old_fp.unlink()
+    client_sheet = parse_samplesheet(args.samplesheet)
+    print(f'{client_sheet=}')
+    copy_dirs = parse_input_dirs(args.prom_dir, client_sheet)
 
+    print(f'{copy_dirs=}')
+    success = create_new_structure(plasmid_dir, client_sheet, copy_dirs)
+
+    if success:
+        print(f'Successfully create plasmid directory {plasmid_dir}')
+
+    #local_path = Path(os.path.realpath(__file__)).parent
+    minimap2_fp = args.minimap2
+    samtools_fp = args.samtools
+    nextflow_fp = args.nextflow
+    
     # each sample/alias has it's own set of records, alias is the barcode name and is the directory that holds the FASTQ files
     client_info = {}
     client_script_paths = []
-    for cdir in client_dirs:
+    for client in client_sheet:
+        cdir = plasmid_dir/client
         client_info[cdir.name] = {}
-        sample_dirs = [d for d in cdir.glob('*') if d.is_dir() and str(d.name) not in ['.nextflow','tmp','[:]','work']]
+        sample_dirs = [d for d in cdir.glob('*') if d.is_dir() and str(d.name).startswith('barcode')]
         if not sample_dirs:
             print(f'Skipping client {cdir}, no sample directories found')
             continue
