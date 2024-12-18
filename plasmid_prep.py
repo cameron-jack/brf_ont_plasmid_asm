@@ -17,7 +17,7 @@ def generate_complete_run_script(top_dir_path, client_script_paths):
         print('# this loads the conda environment', file=fout)
         print('source ~/.bashrc', file=fout)
         for csp in client_script_paths:
-            print(f'{top_dir_path}/{csp.name}', file=fout)
+            print(f'./{csp.name}', file=fout)
     os.chmod(run_path, 0o755)
     print(f'Generated top-level script {run_path}')
 
@@ -66,7 +66,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
     return filter_script_paths
 
 
-def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet_noref_path, client_info, 
+def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet_noref_path, client_info, client_sheet,
         client_path, 
         nextflow_path, pipeline_path, pipeline_version, filter_path, prefilter_prefix,
         minimap2_path, samtools_path):
@@ -99,37 +99,40 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
     """
     filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix)
     client_script_path = client_path.parent/f'run_{client_path.name}.sh'
-    out_dn = client_path/"output"
+    client_name = client_path.name
+    out_dn = client_name +"/output"
     #print(f'{client_info=}')
     with open(client_script_path, 'wt') as fout:
         print('#!/bin/bash', file=fout)
         print(f'', file=fout)
         print(f'# Uncomment any of the filtering script paths below to run filtering prior to plasmid assembly', file=fout)
         for fsp in filter_script_paths:
-            print(f'#{client_path.name}/{fsp.name}', file=fout)
+            print(f'#{client_name}/{fsp.name}', file=fout)
         print('', file=fout)
         if client_sample_sheet_ref_path:
             print('# ONT wf-clone-validation pipeline with reference', file=fout)
             print(f'{nextflow_path} \\', file=fout)
             print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
-            print(f'  --fastq {client_path} \\', file=fout)
+            print(f'  --fastq {client_name} \\', file=fout)
             print(f'  --out_dir {out_dn} \\', file=fout)
-            print(f'  --sample_sheet {client_sample_sheet_ref_path} \\', file=fout)
+            print(f'  --sample_sheet ./{client_sample_sheet_ref_path.name} \\', file=fout)
             print(f'  -profile singularity', file=fout)
             print(f'', file=fout)
         if client_sample_sheet_noref_path:
             print('# ONT wf-clone-validation pipeline without reference', file=fout)
             print(f'{nextflow_path} \\', file=fout)
             print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
-            print(f'  --fastq {client_path} \\', file=fout)
+            print(f'  --fastq {client_name} \\', file=fout)
             print(f'  --out_dir {out_dn} \\', file=fout)
-            print(f'  --sample_sheet {client_sample_sheet_noref_path} \\', file=fout)
+            print(f'  --sample_sheet ./{client_sample_sheet_noref_path.name} \\', file=fout)
             print(f'  -profile singularity', file=fout)
             print(f'', file=fout)
         print(f'# map each original FASTQ back to assembly', file=fout)
+        print(f'cd ..', file=fout)
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
-                assembly_fp = f'{out_dn}/{sample_name}.final.fasta'  # path to assembled plasmid
+                alias = client_sheet[client_path.name][sample_name]['alias']
+                assembly_fp = f'{client_path/"output"}/{alias}.final.fasta'  # path to assembled plasmid
                 #print(f'Found fastq {fp=}')
                 fo = rename_fastq_to_bam(fp)
                 print(f'{minimap2_path} -x map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} - ', file=fout)
@@ -139,7 +142,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
     return client_script_path
 
 
-def generate_sample_sheets(client_info, client_path):
+def generate_sample_sheets(client_info, client_path, client_sheet):
     """
     Generate two sample sheets, one with reference and one without.
     If we ever want to use insert references then we'll need to add these separately too
@@ -148,6 +151,7 @@ def generate_sample_sheets(client_info, client_path):
     Inputs:
         client_info - dictionary of clients and samples
         client_path - full path to client directory
+        client_sheet - user provided client/sample info
     Returns:
         client_sample_sheet_noref_path, client_sample_sheet_ref_path
 
@@ -173,7 +177,7 @@ def generate_sample_sheets(client_info, client_path):
         with open(client_sample_sheet_ref_path, 'wt') as fout:
             print(','.join(['alias','barcode','type','approx_size','full_reference']), file=fout)
             for sample_name in samples_with_references:
-                alias = sample_name
+                alias = client_sheet[client_path.name][sample_name]['alias']
                 barcode = sample_name
                 reference = str(client_info[client_path.name][sample_name].get('reference',''))
                 #insert = str(client_info[client_path.name][sample_name].get('insert',''))
@@ -184,7 +188,7 @@ def generate_sample_sheets(client_info, client_path):
         with open(client_sample_sheet_noref_path, 'wt') as fout:
             print(','.join(['alias','barcode','type','approx_size']), file=fout)
             for sample_name in samples_without_references:
-                alias = sample_name
+                alias = client_sheet[client_path.name][sample_name]['alias']
                 barcode = sample_name
                 print(','.join([alias,barcode,'test_sample','7000']), file=fout)
     
@@ -356,7 +360,7 @@ def create_new_structure(plasmid_dir, client_info, copy_dirs):
                 if not bp.exists():
                     bp.mkdir()
                 fps = [copy_dirs[client][barcode]/f for f in os.listdir(copy_dirs[client][barcode])]
-                print(f'\n{fps=}\n')
+                #print(f'\n{fps=}\n')
                 for fp in fps:
                     copy2(fp, plasmid_dir/client/barcode/fp.name)
                 ref = client_info[client][barcode]['ref']
@@ -364,7 +368,7 @@ def create_new_structure(plasmid_dir, client_info, copy_dirs):
                     ref_dp = bp/'reference'
                     if not ref_dp.exists():
                         ref_dp.mkdir()
-                    copy2(ref, ref_dp/ref)
+                    copy2(ref, ref_dp/Path(ref).name)
     except Exception as exc:
         print(f'Failed to create new plasmid experiment directories {exc}')
         exit(3)
@@ -441,10 +445,10 @@ def main():
     plasmid_dir.mkdir()
 
     client_sheet = parse_samplesheet(args.samplesheet)
-    print(f'{client_sheet=}')
+    #print(f'{client_sheet=}')
     copy_dirs = parse_input_dirs(args.prom_dir, client_sheet)
 
-    print(f'{copy_dirs=}')
+    #print(f'{copy_dirs=}')
     success = create_new_structure(plasmid_dir, client_sheet, copy_dirs)
 
     if success:
@@ -508,14 +512,14 @@ def main():
                 client_info[cdir.name][sd.name]['insert'] = insert_fp[0]
 
         # generate client sample sheets without, and with, references
-        client_sample_sheet_noref_path, client_sample_sheet_ref_path = generate_sample_sheets(client_info, cdir)
+        client_sample_sheet_noref_path, client_sample_sheet_ref_path = generate_sample_sheets(client_info, cdir, client_sheet)
         if client_sample_sheet_noref_path:
             print(f'Created sample sheet without reference sequences {client_sample_sheet_noref_path} for client {cdir.name}')
         if client_sample_sheet_ref_path:
             print(f'Created sample sheet with reference sequences {client_sample_sheet_ref_path} for client {cdir.name}')
 
         client_run_script_path = generate_client_run_script(client_sample_sheet_ref_path, 
-                client_sample_sheet_noref_path, client_info, cdir, 
+                client_sample_sheet_noref_path, client_info, client_sheet, cdir, 
                 nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
                 args.prefilter_prefix, minimap2_fp, samtools_fp)
         print(f'Created script {client_run_script_path} for client {cdir.name}')

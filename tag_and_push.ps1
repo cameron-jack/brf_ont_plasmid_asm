@@ -1,8 +1,8 @@
-$VER = "v2.03.000"
+$VER = "v2.03.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: the plasmid_prep.py script now reads a CSV of sample info, and scans a PromethION directory tree, then sets everything up to run.
+* NEW: numerous path updates
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
