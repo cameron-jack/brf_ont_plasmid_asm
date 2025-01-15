@@ -51,14 +51,14 @@ wf-clone-validation pipeline. It is possible to enable pre-assembly filtering of
 by adjusting the run scripts that are produced for each client.
 
 ### Output:
-plasmid_dir/
-    | - clientA/
-        | - fastq1...fastqN (.gz possible)
-        | - reference/ref_filename.fa (optional)
-        | - insert/insert_filename.fa (optional)
-    | - clientB/
-        | ...
-    ...
+- plasmid_dir/
+  - clientA/
+    - fastq1...fastqN (.gz possible)
+    - reference/ref_filename.fa (optional)
+    - insert/insert_filename.fa (optional)
+  - clientB/
+    - ...
+  - ...
 
 ### Running the plasmid assembly
 To perform the actual pipeline, ensure that the whole output directory tree is available 
