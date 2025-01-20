@@ -1,8 +1,8 @@
-$VER = "v3.00.001"
+$VER = "v3.00.002"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* CHANGED: Updated README.md
+* FIXED: path tweaks
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

@@ -28,7 +28,7 @@ def logstr_from_fastq_path(fp):
     Return the str to a log file renames from the fastq path
     """
     suffix = ['.fq','.fq.gz','.fastq','.fastq.gz']
-    fq_str = str(fp).lower()
+    fq_str = str(fp)
     for s in suffix:
         if fq_str.endswith(s):
             log_str = fq_str.replace(s,'.log')
@@ -58,15 +58,17 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
             # else:
                 
             for fp in fq_files:
-                log_path = logstr_from_fastq_path(fp) 
+                # print(f'{fp=} {fp.parent=}')
+                prefilt_path = Path(client_path.name) / fp.parent.name / (str(prefilter_prefix) + fp.name)
+                filt_path = Path(client_path.name)/str(sample_name)/fp.name
+                log_path = logstr_from_fastq_path(filt_path)
                 if not log_path:
                     log_path = '/dev/null'
-                prefilt_path = fp.parent / (str(prefilter_prefix) + fp.name)
-                print(f'if [[ ! -e {prefilt_path}]]', file=fout)
+                print(f'if [[ ! -e {prefilt_path} ]]', file=fout)
                 print(f'then', file=fout)
-                print(f'    mv {fp} {prefilt_path}', file=fout)
+                print(f'    mv {filt_path} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
-                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {fp} 2> {log_path}', file=fout)
+                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {filt_path} 2> {log_path}', file=fout)
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
@@ -385,14 +387,14 @@ def create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=True, 
                             for fp in fps:
                                 if fp.name.lower().endswith('.gz'):
                                     if verbose:
-                                        print(f'Copying {fp} to {collapse_fp}')
+                                        print(f'Collapsing {fp} to {collapse_fp}')
                                     with gzip.open(fp, 'rt') as f:
                                         for line in f:
                                             if line.strip():
                                                 fout.write(line)
                                 else:
                                     if verbose:
-                                        print(f'Copying {fp} to {collapse_fp}')
+                                        print(f'Collapsing {fp} to {collapse_fp}')
                                     with open(fp, 'rt') as f:
                                         for line in f:
                                             if line.strip():
