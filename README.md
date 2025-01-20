@@ -1,28 +1,24 @@
 ## BRF ONT Plasmid Assembly
-Version 2.0
+Version 3.00.001
+Prepares a PromethION plasmid sequencing run for processing by the ONT 
+Epi2me-labs wf-clone-validation pipeline.
+
 Replaces the original Simple Plasmid Pipeline by John Luo here: https://github.com/RunpengLuo/Simple_Plasmid
 
-Requires one top-level directory for all the client plasmids you want to run in one go. 
-Inside, you'd have one directory for each client. In each client directory you'd have 
-an experiment directory for each separate plasmid (the barcode name, or sample name). 
-Within that are all the FASTQ sequences files for that plasmid, an optional 
-directory called "reference" - if you have a reference - and another optional directory 
-called "insert" - for if you have a short fragment that you're trying to find in the plasmid.
- 
-You then a Python script called "plasmid_prep.py" which would take the path to that 
-top-level directory. It would then make per-client tables that inform the pipeline how 
-to run the samples, and would print the paths to each of these on the screen, so that 
-you can then customise them if needed (unlikely).
- 
-It would also make a shell script for that top-level directory, which would run each of 
-the stages of the pipeline for each of the clients and their samples. It'd just run each 
-in turn. I think you'd be looking at perhaps being able to get through 10 plasmids per 
-hour. It will run Nanofilt, the wf-clone-validation pipeline, 
-and minimap2 (just the same as the existing pipeline).
- 
-There should be one report per client.
+Requires a PromethION sequencing directory, a plasmid sample sheet
+from user, and a path to build a new directory tree.
 
-Run plasmid sequencing, assembly, and alignment as simple as it is.
+It then creates the directory tree expected by the wf-clone-validation
+pipeline, and populates it with the appropriate files from the PromethION.
+It also creates all the scripts to run each given client, collapses
+multiple fastqs to a single file for each sample, filters
+by sequence length and quality, runs the pipeline, and maps back
+the reads against the assembled plasmid sequence.
+
+You may provide custom reference sequences for each barcode in the
+plasmid sample sheet (details below).
+ 
+There is one report generated per client.
 
 ### Download and Setup
 This pipeline requires a 64-bit Linux system and python (supported versions are python3.8 and higher).
@@ -66,4 +62,4 @@ to the machine that will run the pipeline. Then you can simply execute the bash 
 "run_plasmids.sh" in the top-level directory. This will execute each client pipeline sequentially.
 
 ### Notes
-The old simp_plas.py script is deprecated and will be removed in the next release.
+Possibly zip up each client's set of output files and alignments.

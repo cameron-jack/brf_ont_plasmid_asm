@@ -1,12 +1,8 @@
-$VER = "v3.00.000"
+$VER = "v3.00.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: Collapses input FASTQ files into a single file by defaut
-* CHANGED: code renaming to ensure clearer understanding
-* CHANGED: more verbose messages
-* CHANGED: defaults to filtering with length 2000 and quality 15
-* REMOVED: all the legacy code
+* CHANGED: Updated README.md
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
