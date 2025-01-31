@@ -1,8 +1,8 @@
-$VER = "v3.00.004"
+$VER = "v3.00.005"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: reference and insert paths fixed (I hope)
+* FIXED: reference and insert paths missing insert/ and reference/ folders
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
