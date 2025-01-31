@@ -68,7 +68,8 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
                 print(f'then', file=fout)
                 print(f'    mv {filt_path} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
-                print(f'{filter_path} -l {min_length} -q {min_quality} {prefilt_path} > {filt_path} 2> {log_path}', file=fout)
+                print(f'gunzip -c {prefilt_path} | {filter_path} -l {min_length} '+\
+                        f'-q {min_quality} - > {filt_path} 2> {log_path}', file=fout)
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
