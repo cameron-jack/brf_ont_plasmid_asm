@@ -1,8 +1,8 @@
-$VER = "v3.00.003"
+$VER = "v3.00.004"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: gunzip compression added for Nanofilt
+* FIXED: reference and insert paths fixed (I hope)
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
