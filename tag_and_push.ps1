@@ -1,8 +1,9 @@
-$VER = "v3.00.005"
+$VER = "v3.00.006"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: reference and insert paths missing insert/ and reference/ folders
+* FIXED: command line for Nanofilt contained unnecessary dash
+* FIXED: paths for lots of things
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

@@ -68,8 +68,11 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
                 print(f'then', file=fout)
                 print(f'    mv {filt_path} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
+                ungzipped_filt_path = str(filt_path)[:-3]
+                # trim off the .gz from the filt_path
                 print(f'gunzip -c {prefilt_path} | {filter_path} -l {min_length} '+\
-                        f'-q {min_quality} - > {filt_path} 2> {log_path}', file=fout)
+                        f'-q {min_quality} > {ungzipped_filt_path} 2> {log_path}', file=fout)
+                print(f'gzip {ungzipped_filt_path}', file=fout)
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
@@ -137,14 +140,14 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
             print(f'  -profile singularity', file=fout)
             print(f'', file=fout)
         print(f'# map each original FASTQ back to assembly', file=fout)
-        print(f'cd ..', file=fout)
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
                 alias = client_sheet[client_path.name][sample_name]['alias']
-                assembly_fp = f'{client_path/"output"}/{alias}.final.fasta'  # path to assembled plasmid
+                assembly_fp = f'{client_path.name}/output/{alias}.final.fasta'  # path to assembled plasmid
                 #print(f'Found fastq {fp=}')
-                fo = rename_fastq_to_bam(fp)
-                print(f'{minimap2_path} -x map-ont -a {assembly_fp} {fp} | {samtools_path} sort -o {fo} - ', file=fout)
+                fi = Path(client_path.name)/sample_name/fp.name
+                fo = rename_fastq_to_bam(fi)
+                print(f'{minimap2_path} -x map-ont -a {assembly_fp} {fi} | {samtools_path} sort -o {fo} - ', file=fout)
                 print(f'{samtools_path} index {fo}', file=fout)
                 print(f'', file=fout)
     os.chmod(client_script_path, 0o755)
