@@ -1,10 +1,8 @@
-$VER = "v3.01.000"
+$VER = "v3.01.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* NEW: custom script for max-length filtering FASTQ files
-* CHANGED: expected plasmid length is now required in the sample sheet
-* CHANGED: reads are now filter by length +/- 2K bp of the expected plasmid length
+* Fixed: dumb type hint bug
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

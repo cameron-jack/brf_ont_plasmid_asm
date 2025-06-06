@@ -164,7 +164,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
     return client_script_path
 
 
-def generate_sample_sheets(client_info: dict, client_path: Path, client_sheet: dict) -> tuple[Path, Path]:
+def generate_sample_sheets(client_info: dict, client_path: Path, client_sheet: dict):
     """
     Generate two sample sheets, one with reference and one without.
     If we ever want to use insert references then we'll need to add these separately too
