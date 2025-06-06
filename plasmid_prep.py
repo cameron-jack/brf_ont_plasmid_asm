@@ -36,10 +36,11 @@ def logstr_from_fastq_path(fp):
     return ''
 
 
-def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix='unfilt_', min_length=2000, min_quality=15):
+def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter_path, maxfilt_path, prefilter_prefix='unfilt_', min_quality=15):
     """
     client_path - Path to client directory
     client_info - client_info dictionary
+    client_sheet - user provided client/sample info (client,alias,barcode,size,reference)
     filter_path - path to filter program (Nanofilt or Chopper)
     prefilter_prefix - rename all fastq files with this prior to filtering
     For each sample, create a script which:
@@ -49,6 +50,12 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
     """
     filter_script_paths = []
     for sample_name in client_info[client_path.name]:
+        size = client_sheet[client_path.name][sample_name].get('size','')
+        if not size:
+            print(f'No size provided for sample {sample_name} in client {client_path.name}. Exiting.')
+            exit(1)
+        min_size = int(size) - 2000
+        max_size = int(size) + 2000
         filter_script_path = client_path / (str(sample_name) + '_filt.sh')
         with open(filter_script_path, 'wt') as fout:
             print('#!/bin/bash', file=fout)
@@ -70,8 +77,10 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
                 print(f'fi', file=fout)
                 ungzipped_filt_path = str(filt_path)[:-3]
                 # trim off the .gz from the filt_path
-                print(f'gunzip -c {prefilt_path} | {filter_path} -l {min_length} '+\
-                        f'-q {min_quality} > {ungzipped_filt_path} 2> {log_path}', file=fout)
+                print(f'gunzip -c {prefilt_path} | {filter_path} -l {min_size} '+\
+                        f'-q {min_quality} | python {maxfilt_path} {max_size} > '+\
+                        f'{ungzipped_filt_path} 2> {log_path}', file=fout)
+                print(f'')
                 print(f'gzip {ungzipped_filt_path}', file=fout)
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
@@ -80,7 +89,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilt
 
 def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet_noref_path, client_info, client_sheet,
         client_path, 
-        nextflow_path, pipeline_path, pipeline_version, filter_path, prefilter_prefix,
+        nextflow_path, pipeline_path, pipeline_version, filter_path, maxfilt_path, prefilter_prefix,
         minimap2_path, samtools_path):
     """
     Inputs:
@@ -91,6 +100,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         pipeline_path - singularity container path
         pipeline_version - e.g. v1.6.0
         filter_path - path to Nanofilt or Chopper
+        maxfilt_path - path to maxfilt.py script
         prefilter_prefix - a prefix applied to FASTQ files before filtering
         minimap2_path - path to minimap2
         samtools pth - path to samtools
@@ -109,7 +119,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
     4) samtools index on the mapped BAM file
 
     """
-    filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, filter_path, prefilter_prefix)
+    filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter_path, maxfilt_path, prefilter_prefix)
     client_script_path = client_path.parent/f'run_{client_path.name}.sh'
     client_name = client_path.name
     out_dn = client_name +"/output"
@@ -154,7 +164,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
     return client_script_path
 
 
-def generate_sample_sheets(client_info, client_path, client_sheet):
+def generate_sample_sheets(client_info: dict, client_path: Path, client_sheet: dict) -> tuple[Path, Path]:
     """
     Generate two sample sheets, one with reference and one without.
     If we ever want to use insert references then we'll need to add these separately too
@@ -163,13 +173,13 @@ def generate_sample_sheets(client_info, client_path, client_sheet):
     Inputs:
         client_info - dictionary of clients and samples
         client_path - full path to client directory
-        client_sheet - user provided client/sample info
+        client_sheet - user provided client/sample info (client,alias,barcode,size,reference)
     Returns:
         client_sample_sheet_noref_path, client_sample_sheet_ref_path
 
     note that 'barcode' is the name of the sample directory which contains fastq files for that sample
     cut_site is an optional cut site to check linearisation efficiency
-    approx_size defaults to 7000
+    approx_size is taken from the sample sheet, but can be empty (which will crash the pipeline, on purpose)
     type defaults to 'test_sample' but could also be 'postive_control','negative_control','no_template_control'
     headers: alias, barcode, type, approx_size, cut_site, full_reference, insert_reference
     """
@@ -201,8 +211,9 @@ def generate_sample_sheets(client_info, client_path, client_sheet):
             print(','.join(['alias','barcode','type','approx_size']), file=fout)
             for sample_name in samples_without_references:
                 alias = client_sheet[client_path.name][sample_name]['alias']
+                size = client_sheet[client_path.name][sample_name].get('size','')
                 barcode = sample_name
-                print(','.join([alias,barcode,'test_sample','7000']), file=fout)
+                print(','.join([alias,barcode,'test_sample',size]), file=fout)
     
     return client_sample_sheet_noref_path, client_sample_sheet_ref_path
 
@@ -219,7 +230,7 @@ def check_fastq_name(fn):
     return False
 
 
-def check_fasta_name(fn):
+def check_fasta_name(fn:str) -> bool:
     """
     Check that the FASTA file name ends with the expected suffix. Ignore case
     Returns True if name is good, otherwise False
@@ -231,7 +242,7 @@ def check_fasta_name(fn):
     return False
 
 
-def rename_fastq_to_bam(fp):
+def rename_fastq_to_bam(fp: str) -> Path|None:
     """
     Replace extension with .bam
     """
@@ -240,16 +251,16 @@ def rename_fastq_to_bam(fp):
         if str(fp).lower().endswith(s):
             return Path(str(fp).replace(s,'.bam'))
 
-def parse_samplesheet(samplesheet):
+def parse_samplesheet(samplesheet: str):
     """
     Reads an ONT wf-clone-validation plasmid sample sheet: e.g. 
-    client,alias,barcode,reference
-    A,plasmid1,barcode21,/path/to/reference.fa
-    A,plasmid2,barcode22,ref.fasta
-    B,plasmid3,barcode23,
-    C,plasmid4,barcode24,
+    client,alias,barcode,size,reference
+    A,plasmid1,barcode21,7000,/path/to/reference.fa
+    A,plasmid2,barcode22,3000,ref.fasta
+    B,plasmid3,barcode23,21000,
+    C,plasmid4,barcode24,14000,
 
-    Returns a dict [client]={barcode:{'alias':'','ref':'',fastqs:[]}}
+    Returns a dict [client]={barcode:{'alias':'','ref':'','size':7000,'fastqs':[]}}
     """
     if not Path(samplesheet).exists():
         print(f'Samplesheet {samplesheet} does not exist')
@@ -265,14 +276,15 @@ def parse_samplesheet(samplesheet):
             cols = line.split(',')
             if i==0 and cols[0].lower().startswith('client'):
                 continue  # header
-            if len(cols) < 3:
-                continue  # we must have at least 3 columns
+            if len(cols) < 4:
+                continue  # we must have at least 4 columns: client,alias,barcode,size
             client = cols[0].strip().replace(' ','_')
             alias = cols[1].strip().replace(' ','_')
             barcode = cols[2].strip()
+            size = cols[3].strip()  # no default size
             ref = ''
-            if len(cols) > 3:  # optional reference in 4th column, ignore later columns 
-                ref = cols[3].strip()
+            if len(cols) > 4:  # optional reference in 4th column, ignore later columns 
+                ref = cols[4].strip()
             if client not in client_info:
                 client_info[client] = {}
                 client_barcode_aliases[client] = set()
@@ -282,7 +294,7 @@ def parse_samplesheet(samplesheet):
                 print(f'barcode {barcode} and alias {alias} are not a unique combination in client {client}')
                 exit(1)
             if barcode not in client_info[client]:
-                client_info[client][barcode] = {'alias':alias,'ref':ref,'fastqs':[]}
+                client_info[client][barcode] = {'alias':alias,'ref':ref,'size':size,'fastqs':[]}
             else:
                 print(f'barcode {barcode} must be unique for client {client}')
                 exit(1)
@@ -468,6 +480,7 @@ def main():
     parser.add_argument('--minimap2', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/minimap2', help='Path to minimap2')
     parser.add_argument('--samtools', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/samtools', help='Path to samtools')
     parser.add_argument('--filter_path', default='/home/brf/lib/miniconda3/bin/NanoFilt', help='Path to nanofilt or chopper')
+    parser.add_argument('--maxfilt_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/maxfilt.py', help='Path to maxfilt.py script')
     parser.add_argument('--nextflow', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
     parser.add_argument('--pipeline_version', default='v1.6.0', help='wf-clone-validation pipeline version')
@@ -575,7 +588,7 @@ def main():
         client_run_script_path = generate_client_run_script(client_sample_sheet_ref_path, 
                 client_sample_sheet_noref_path, client_info, client_sheet, cdir, 
                 nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                args.prefilter_prefix, minimap2_fp, samtools_fp)
+                args.maxfilt_path, args.prefilter_prefix, minimap2_fp, samtools_fp)
         print(f'Created script {client_run_script_path} for client {cdir.name}')
         client_script_paths.append(client_run_script_path)
         

@@ -1,9 +1,10 @@
-$VER = "v3.00.006"
+$VER = "v3.01.000"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* FIXED: command line for Nanofilt contained unnecessary dash
-* FIXED: paths for lots of things
+* NEW: custom script for max-length filtering FASTQ files
+* CHANGED: expected plasmid length is now required in the sample sheet
+* CHANGED: reads are now filter by length +/- 2K bp of the expected plasmid length
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
