@@ -1,8 +1,8 @@
-$VER = "v3.01.001"
+$VER = "v3.01.002"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Fixed: dumb type hint bug
+* Fixed: fixed incorrect max_length.py name
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

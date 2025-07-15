@@ -100,7 +100,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         pipeline_path - singularity container path
         pipeline_version - e.g. v1.6.0
         filter_path - path to Nanofilt or Chopper
-        maxfilt_path - path to maxfilt.py script
+        maxfilt_path - path to max_length.py script
         prefilter_prefix - a prefix applied to FASTQ files before filtering
         minimap2_path - path to minimap2
         samtools pth - path to samtools
@@ -480,7 +480,7 @@ def main():
     parser.add_argument('--minimap2', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/minimap2', help='Path to minimap2')
     parser.add_argument('--samtools', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/samtools', help='Path to samtools')
     parser.add_argument('--filter_path', default='/home/brf/lib/miniconda3/bin/NanoFilt', help='Path to nanofilt or chopper')
-    parser.add_argument('--maxfilt_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/maxfilt.py', help='Path to maxfilt.py script')
+    parser.add_argument('--maxfilt_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/max_length.py', help='Path to maxfilt.py script')
     parser.add_argument('--nextflow', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
     parser.add_argument('--pipeline_version', default='v1.6.0', help='wf-clone-validation pipeline version')
