@@ -1,8 +1,8 @@
-$VER = "v3.01.002"
+$VER = "v3.01.003"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Fixed: fixed incorrect max_length.py name
+* Changed: default assembler is now Canu
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
