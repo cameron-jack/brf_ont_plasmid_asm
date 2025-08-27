@@ -149,8 +149,8 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
             print(f'  --fastq {client_name} \\', file=fout)
             print(f'  --out_dir {out_dn} \\', file=fout)
             print(f'  --sample_sheet ./{client_sample_sheet_noref_path.name} \\', file=fout)
-            print(f'  -profile singularity', file=fout)
             print(f'  --assembly_tool canu \\', file=fout)
+            print(f'  -profile singularity', file=fout)
             print(f'', file=fout)
         print(f'# map each original FASTQ back to assembly', file=fout)
         for sample_name in client_info[client_path.name]:

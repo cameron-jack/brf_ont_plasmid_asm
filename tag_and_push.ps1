@@ -1,8 +1,9 @@
-$VER = "v3.01.003"
+$VER = "v3.02.000"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
 * Changed: default assembler is now Canu
+* Fixed: Script line order corrected
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
