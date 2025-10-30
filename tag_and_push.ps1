@@ -1,9 +1,10 @@
-$VER = "v3.02.000"
+$VER = "v3.03.000"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Changed: default assembler is now Canu
-* Fixed: Script line order corrected
+* New: updated to v1.8 of the core pipeline
+* Fixed: Now uses suggested plasmid size from initial samplesheet
+* Fixed: moves unfiltered FASTQ to unfiltered_data folder for client before a run
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"

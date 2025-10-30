@@ -45,7 +45,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
     prefilter_prefix - rename all fastq files with this prior to filtering
     For each sample, create a script which:
     - renames the original fastq XXX to unfilt_XXX
-    - filters the unfilt_XXX file to the parameters given and outputs as XXX (matching the expected file names)
+    - filters the unfilt_XXX file to the parameters given and outputs as /client_data/XXX (matching the expected file names)
     The script should be in available in the client directory to avoid sample name clashes
     """
     filter_script_paths = []
@@ -66,13 +66,15 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
                 
             for fp in fq_files:
                 # print(f'{fp=} {fp.parent=}')
-                prefilt_path = Path(client_path.name) / fp.parent.name / (str(prefilter_prefix) + fp.name)
+                prefilt_path = Path(client_path.name) / fp.parent.name / 'unfiltered_read' / (str(prefilter_prefix) + fp.name)
                 filt_path = Path(client_path.name)/str(sample_name)/fp.name
+                unfilt_path = Path(client_path.name) / fp.parent.name / 'unfiltered_reads'
                 log_path = logstr_from_fastq_path(filt_path)
                 if not log_path:
                     log_path = '/dev/null'
                 print(f'if [[ ! -e {prefilt_path} ]]', file=fout)
                 print(f'then', file=fout)
+                print(f'    mkdir -p {unfilt_path}')
                 print(f'    mv {filt_path} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
                 ungzipped_filt_path = str(filt_path)[:-3]
@@ -82,6 +84,7 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
                         f'{ungzipped_filt_path} 2> {log_path}', file=fout)
                 print(f'')
                 print(f'gzip {ungzipped_filt_path}', file=fout)
+                
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
     return filter_script_paths
@@ -106,7 +109,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         samtools pth - path to samtools
 
     /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow \
-    run epi2me-labs/wf-clone-validation -r v1.6.0 \
+    run epi2me-labs/wf-clone-validation -r v1.8.0 \
     --fastq /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/calledFastq/barcode15/ \
     --out_dir /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/asmOutput/20241108-Mla7-45-1--BC15_barcode15_raw_flye \
     --full_reference /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/ReferenceMaps/20241108-Mla7-45-1--BC15.fasta \
@@ -203,10 +206,11 @@ def generate_sample_sheets(client_info: dict, client_path: Path, client_sheet: d
             print(','.join(['alias','barcode','type','approx_size','full_reference']), file=fout)
             for sample_name in samples_with_references:
                 alias = client_sheet[client_path.name][sample_name]['alias']
+                size = client_sheet[client_path.name][sample_name].get('size','')
                 barcode = sample_name
                 reference = str(client_info[client_path.name][sample_name].get('reference',''))
                 #insert = str(client_info[client_path.name][sample_name].get('insert',''))
-                print(','.join([alias,barcode,'test_sample','7000',reference]), file=fout)
+                print(','.join([alias,barcode,'test_sample',size,reference]), file=fout)
 
     if samples_without_references:
         client_sample_sheet_noref_path = client_path.parent / (str(client_path.name) + '_sample_sheet_noref.csv')
@@ -254,6 +258,7 @@ def rename_fastq_to_bam(fp: str) -> Path|None:
         if str(fp).lower().endswith(s):
             return Path(str(fp).replace(s,'.bam'))
 
+
 def parse_samplesheet(samplesheet: str):
     """
     Reads an ONT wf-clone-validation plasmid sample sheet: e.g. 
@@ -286,7 +291,7 @@ def parse_samplesheet(samplesheet: str):
             barcode = cols[2].strip()
             size = cols[3].strip()  # no default size
             ref = ''
-            if len(cols) > 4:  # optional reference in 4th column, ignore later columns 
+            if len(cols) > 4:  # optional reference in 5th column, ignore later columns 
                 ref = cols[4].strip()
             if client not in client_info:
                 client_info[client] = {}
@@ -440,8 +445,8 @@ def main():
     """
     Replacement of original 'simple plasmid' project.
 
-    Reads a (user provided) plasmid sample sheet of 3 or 4 columns: e.g. 
-        client,alias,barcode,reference
+    Reads a (user provided) plasmid sample sheet of 4 or 5 columns (reference is optional): e.g. 
+        client,alias,barcode,size,reference
         A,plasmid1,barcode21,/path/to/reference.fa
         A,plasmid2,barcode22,ref.fasta
         B,plasmid3,barcode23,
@@ -476,7 +481,7 @@ def main():
     
     parser = AP()
     parser.add_argument('prom_dir', help='Path to input PromethION sequencing')
-    parser.add_argument('-s','--samplesheet', required=True, help='Path to 3 or 4 column samplesheet to set up experiment')
+    parser.add_argument('-s','--samplesheet', required=True, help='Path to 4 or 5 column samplesheet to set up experiment')
     parser.add_argument('-p', '--plasmid_dir', default=plasmid_dn, help='Path to output folder containing all client plasmid data')
     parser.add_argument('-v', '--verbose', action='store_true', help='Display more information about the prep process')
     parser.add_argument('-o','--overwrite', action='store_true', help='Overwrite existing plasmid directory')
@@ -486,7 +491,7 @@ def main():
     parser.add_argument('--maxfilt_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/max_length.py', help='Path to maxfilt.py script')
     parser.add_argument('--nextflow', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
-    parser.add_argument('--pipeline_version', default='v1.6.0', help='wf-clone-validation pipeline version')
+    parser.add_argument('--pipeline_version', default='v1.8.0', help='wf-clone-validation pipeline version')
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
     parser.add_argument('--no_collapse', action='store_true', help='Disable collapsing FASTQs to a single file for each barcode')
     
@@ -549,7 +554,7 @@ def main():
             if not seq_fns:
                 print(f'No FASTQ (.fq/.fastq/.fq.gz/.fastq.gz files found for client {cdir.name} sample {sd.name}')
                 exit(1)
-            # 
+             
             client_info[cdir.name][sd.name]['fastq_files'] = seq_fns
             
             ref_dir = sd.joinpath('reference')  # optional
