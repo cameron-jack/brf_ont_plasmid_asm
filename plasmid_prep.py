@@ -63,18 +63,17 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
             # if client_info[client_path.name][sample_name]['collapse_fq']:
             #     fq_files = client_path/sample_name/client_info[client_path.name][sample_name]['collapse_fq']
             # else:
-                
+            unfilt_path = Path(client_path.name) / 'unfiltered_reads'
+            print(f'mkdir -p {unfilt_path}', file=fout)
             for fp in fq_files:
                 # print(f'{fp=} {fp.parent=}')
-                prefilt_path = Path(client_path.name) / fp.parent.name / 'unfiltered_read' / (str(prefilter_prefix) + fp.name)
+                prefilt_path = unfilt_path / (str(prefilter_prefix) + fp.name)
                 filt_path = Path(client_path.name)/str(sample_name)/fp.name
-                unfilt_path = Path(client_path.name) / fp.parent.name / 'unfiltered_reads'
                 log_path = logstr_from_fastq_path(filt_path)
                 if not log_path:
                     log_path = '/dev/null'
                 print(f'if [[ ! -e {prefilt_path} ]]', file=fout)
                 print(f'then', file=fout)
-                print(f'    mkdir -p {unfilt_path}')
                 print(f'    mv {filt_path} {prefilt_path}', file=fout)
                 print(f'fi', file=fout)
                 ungzipped_filt_path = str(filt_path)[:-3]
