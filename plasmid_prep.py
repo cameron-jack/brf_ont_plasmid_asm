@@ -100,7 +100,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         client_path - full path to client directory
         nextflow_path - path to nextflow installation
         pipeline_path - singularity container path
-        pipeline_version - e.g. v1.6.0
+        pipeline_version - e.g. v1.8.4
         filter_path - path to Nanofilt or Chopper
         maxfilt_path - path to max_length.py script
         prefilter_prefix - a prefix applied to FASTQ files before filtering
@@ -108,7 +108,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         samtools pth - path to samtools
 
     /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow \
-    run epi2me-labs/wf-clone-validation -r v1.8.0 \
+    run epi2me-labs/wf-clone-validation -r v1.8.4 \
     --fastq /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/calledFastq/barcode15/ \
     --out_dir /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/asmOutput/20241108-Mla7-45-1--BC15_barcode15_raw_flye \
     --full_reference /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/ReferenceMaps/20241108-Mla7-45-1--BC15.fasta \
@@ -490,7 +490,7 @@ def main():
     parser.add_argument('--maxfilt_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/max_length.py', help='Path to maxfilt.py script')
     parser.add_argument('--nextflow', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
-    parser.add_argument('--pipeline_version', default='v1.8.0', help='wf-clone-validation pipeline version')
+    parser.add_argument('--pipeline_version', default='v1.8.4', help='wf-clone-validation pipeline version')
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
     parser.add_argument('--no_collapse', action='store_true', help='Disable collapsing FASTQs to a single file for each barcode')
     

@@ -1,8 +1,8 @@
-$VER = "v3.03.001"
+$VER = "v3.03.002"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Fixed: corrected path for unfiltered FASTQs
+* Changed: now runs v1.8.4 of the eip2me plasmid assembly pipeline
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
