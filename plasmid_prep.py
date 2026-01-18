@@ -136,6 +136,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         print('', file=fout)
         if client_sample_sheet_ref_path:
             print('# ONT wf-clone-validation pipeline with reference', file=fout)
+            print('export NXF_VER=23.10.0', file=fout)
             print(f'{nextflow_path} \\', file=fout)
             print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
             print(f'  --fastq {client_name} \\', file=fout)
@@ -146,6 +147,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
             print(f'', file=fout)
         if client_sample_sheet_noref_path:
             print('# ONT wf-clone-validation pipeline without reference', file=fout)
+            print('export NXF_VER=23.10.0', file=fout)
             print(f'{nextflow_path} \\', file=fout)
             print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
             print(f'  --fastq {client_name} \\', file=fout)

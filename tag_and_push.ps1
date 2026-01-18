@@ -1,8 +1,8 @@
-$VER = "v3.03.002"
+$VER = "v3.03.003"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Changed: now runs v1.8.4 of the eip2me plasmid assembly pipeline
+* Fixed: forces older Nextflow version (23.10.0) to be used in the generated run scripts to avoid ONT template issue.
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
