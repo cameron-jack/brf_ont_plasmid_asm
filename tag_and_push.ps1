@@ -1,10 +1,8 @@
-$VER = "v3.04.000"
+$VER = "v3.04.001"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* New: dedicated script to run pipeline on Gadi
-* New: uses Chopper to handle read filtering instead of NanoFilt
-* New: generates launch and run scripts for Gadi
+* Changed: updated documentation to include Gadi and local execution instructions.
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
