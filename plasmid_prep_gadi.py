@@ -5,20 +5,22 @@ from datetime import datetime
 from shutil import copy2, rmtree
 import gzip
 
+"""
+    This script generates run scripts for filtering and assembling plasmid data on Gadi.
+    It creates filtering scripts and client-specific run scripts for the ONT plasmid pipeline.
+"""
 
 def generate_complete_run_script(top_dir_path, client_script_paths):
     """
-    Make a top-level script that launches all client scripts sequentially
+    Make a top-level script that launches all client scripts via PBS
     top_dir_path = client_dir_path.parent
     """
     run_path = Path(top_dir_path) / 'run_plasmids.sh'
     with open(run_path,'wt') as fout:
         print('#!/bin/bash', file=fout)
         print('', file=fout)
-        print('# this loads the conda environment', file=fout)
-        print('source ~/.bashrc', file=fout)
         for csp in client_script_paths:
-            print(f'./{csp.name}', file=fout)
+            print(f'qsub ./{csp.name}', file=fout)
     os.chmod(run_path, 0o755)
     print(f'Generated top-level script {run_path}')
 
@@ -36,12 +38,12 @@ def logstr_from_fastq_path(fp):
     return ''
 
 
-def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter_path, maxfilt_path, prefilter_prefix='unfilt_', min_quality=15):
+def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, chopper_path, prefilter_prefix='unfilt_', min_quality=15):
     """
     client_path - Path to client directory
     client_info - client_info dictionary
     client_sheet - user provided client/sample info (client,alias,barcode,size,reference)
-    filter_path - path to filter program (Nanofilt or Chopper)
+    chopper_path - path to Chopper e.g. $PIPEDIR/bin/chopper-linux-musl
     prefilter_prefix - rename all fastq files with this prior to filtering
     For each sample, create a script which:
     - renames the original fastq XXX to unfilt_XXX
@@ -60,13 +62,9 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
         with open(filter_script_path, 'wt') as fout:
             print('#!/bin/bash', file=fout)
             fq_files = client_info[client_path.name][sample_name]['fastq_files']
-            # if client_info[client_path.name][sample_name]['collapse_fq']:
-            #     fq_files = client_path/sample_name/client_info[client_path.name][sample_name]['collapse_fq']
-            # else:
             unfilt_path = Path(client_path.name) / 'unfiltered_reads'
             print(f'mkdir -p {unfilt_path}', file=fout)
             for fp in fq_files:
-                # print(f'{fp=} {fp.parent=}')
                 prefilt_path = unfilt_path / (str(prefilter_prefix) + fp.name)
                 filt_path = Path(client_path.name)/str(sample_name)/fp.name
                 log_path = logstr_from_fastq_path(filt_path)
@@ -78,11 +76,8 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
                 print(f'fi', file=fout)
                 ungzipped_filt_path = str(filt_path)[:-3]
                 # trim off the .gz from the filt_path
-                print(f'gunzip -c {prefilt_path} | {filter_path} -l {min_size} '+\
-                        f'-q {min_quality} | python {maxfilt_path} {max_size} > '+\
-                        f'{ungzipped_filt_path} 2> {log_path}', file=fout)
-                print(f'')
-                print(f'gzip {ungzipped_filt_path}', file=fout)
+                print(f'gunzip -c {prefilt_path} | {chopper_path} --minlength {min_size} '+\
+                        f'-q {min_quality} --maxlength {max_size} | gzip > {ungzipped_filt_path}.gz 2> {log_path}', file=fout)
                 
         os.chmod(filter_script_path, 0o755)
         filter_script_paths.append(filter_script_path)
@@ -90,24 +85,24 @@ def generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter
 
 
 def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet_noref_path, client_info, client_sheet,
-        client_path, 
-        nextflow_path, pipeline_path, pipeline_version, filter_path, maxfilt_path, prefilter_prefix,
-        minimap2_path, samtools_path):
+        client_path, pipeline_path, pipeline_version, chopper_path, prefilter_prefix, minimap2_path, samtools_path, email):
     """
     Inputs:
         client_sample_sheet_path - path to client sample sheet
         client_info - client_info dictionary
         client_path - full path to client directory
-        nextflow_path - path to nextflow installation
         pipeline_path - singularity container path
         pipeline_version - e.g. v1.8.4
-        filter_path - path to Nanofilt or Chopper
-        maxfilt_path - path to max_length.py script
+        chopper_path - path to Chopper e.g. $PIPEDIR/bin/chopper-linux-musl
         prefilter_prefix - a prefix applied to FASTQ files before filtering
-        minimap2_path - path to minimap2
-        samtools pth - path to samtools
+        minimap2_path - using module, so just name of executable
+        samtools_path - using module, so just name of executable
+        email - email address for PBS notifications
 
-    /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow \
+    module load nextflow/23.10.1
+    export NXF_VER=23.10.0
+
+    nextflow \
     run epi2me-labs/wf-clone-validation -r v1.8.4 \
     --fastq /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/calledFastq/barcode15/ \
     --out_dir /mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/plasmid_test2/asmOutput/20241108-Mla7-45-1--BC15_barcode15_raw_flye \
@@ -116,27 +111,47 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
     -profile singularity
 
     Runs: 
-    1) Nanofilt
+    1) Chopper
     2) ONT Plasmid Pipeline wf-clone-validation
     3) minimap2 of reads back to final assembly
     4) samtools index on the mapped BAM file
 
     """
-    filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, client_sheet, filter_path, maxfilt_path, prefilter_prefix)
-    client_script_path = client_path.parent/f'run_{client_path.name}.sh'
+    filter_script_paths = generate_nanofilt_run_scripts(client_path, client_info, client_sheet, chopper_path, prefilter_prefix)
+    client_script_path = client_path.parent/f'run_{client_path.name}.qsub'
     client_name = client_path.name
     out_dn = client_name +"/output"
     #print(f'{client_info=}')
+    singularity_tmp = '/g/data/vz35/plasmid_gadi/singularity_tmp'
+    singularity_cache = '/g/data/vz35/plasmid_gadi/singularity_cache'
+    nextflow_path = 'nextflow'  # using module, so just name of executable
     with open(client_script_path, 'wt') as fout:
         print('#!/bin/bash', file=fout)
         print(f'', file=fout)
+        print('#PBS -N plsmd_asm', file=fout)
+        print('#PBS -P vz35', file=fout)
+        print('#PBS -l mem=12GB,ncpus=4,walltime=4:00:00', file=fout)
+        print('#PBS -q biodev', file=fout)
+        print('#PBS -l storage=gdata/vz35', file=fout)
+        print('#PBS -m abe', file=fout)
+        print(f'#PBS -M {email}', file=fout)
+        print('#PBS -l wd', file=fout)
+        print('', file=fout)
+        print(f'module load singularity', file=fout)
+        print(f'module load nextflow/23.10.1', file=fout)
+        print(f'mkdir -p {singularity_tmp}', file=fout)
+        print(f'mkdir -p {singularity_cache}', file=fout)
+        print(f'export SINGULARITY_TMPDIR={singularity_tmp}', file=fout)
+        print(f'export SINGULARITY_CACHEDIR={singularity_cache}', file=fout)
+        print(f'export NXF_SINGULARITY_CACHEDIR=$SINGULARITY_CACHEDIR', file=fout)
+        print('export NXF_VER=23.10.1', file=fout)
+        print('', file=fout)
         print(f'# Comment any of the filtering script paths below to disable filtering prior to plasmid assembly', file=fout)
         for fsp in filter_script_paths:
             print(f'{client_name}/{fsp.name}', file=fout)
         print('', file=fout)
         if client_sample_sheet_ref_path:
             print('# ONT wf-clone-validation pipeline with reference', file=fout)
-            print('export NXF_VER=23.10.0', file=fout)
             print(f'{nextflow_path} \\', file=fout)
             print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
             print(f'  --fastq {client_name} \\', file=fout)
@@ -147,7 +162,6 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
             print(f'', file=fout)
         if client_sample_sheet_noref_path:
             print('# ONT wf-clone-validation pipeline without reference', file=fout)
-            print('export NXF_VER=23.10.0', file=fout)
             print(f'{nextflow_path} \\', file=fout)
             print(f'run {pipeline_path} -r {pipeline_version} \\', file=fout)
             print(f'  --fastq {client_name} \\', file=fout)
@@ -157,6 +171,8 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
             print(f'  -profile singularity', file=fout)
             print(f'', file=fout)
         print(f'# map each original FASTQ back to assembly', file=fout)
+        print(f'module load samtools/1.22', file=fout)
+        print(f'module load minimap2/2.24', file=fout)
         for sample_name in client_info[client_path.name]:
             for fp in client_info[client_path.name][sample_name]['fastq_files']:
                 alias = client_sheet[client_path.name][sample_name]['alias']
@@ -165,7 +181,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
                 fi = Path(client_path.name)/sample_name/fp.name
                 fo = rename_fastq_to_bam(fi)
                 print(f'{minimap2_path} -x map-ont -a {assembly_fp} {fi} | {samtools_path} sort -o {fo} - ', file=fout)
-                print(f'{samtools_path} index {fo}', file=fout)
+                print(f'samtools index {fo}', file=fout)
                 print(f'', file=fout)
     os.chmod(client_script_path, 0o755)
     return client_script_path
@@ -226,7 +242,7 @@ def generate_sample_sheets(client_info: dict, client_path: Path, client_sheet: d
     return client_sample_sheet_noref_path, client_sample_sheet_ref_path
 
 
-def check_fastq_name(fn):
+def check_fastq_name(fn:str) -> bool:
     """
     Check that the FASTQ file name ends with the expected suffix. Ignore case.
     Returns True if name is good, otherwise False
@@ -260,7 +276,7 @@ def rename_fastq_to_bam(fp: str) -> Path|None:
             return Path(str(fp).replace(s,'.bam'))
 
 
-def parse_samplesheet(samplesheet: str):
+def parse_samplesheet(samplesheet: str) -> dict:
     """
     Reads an ONT wf-clone-validation plasmid sample sheet: e.g. 
     client,alias,barcode,size,reference
@@ -311,7 +327,7 @@ def parse_samplesheet(samplesheet: str):
 
 
 # now iterate through the PromethION directory tree looking for barcodes
-def get_barcode_dirs(p, all_barcodes, chosen_dirs):
+def get_barcode_dirs(p: Path, all_barcodes: set, chosen_dirs: list) -> list:
     """
     iterate through directories finding all the barcode dirs we want
     """
@@ -326,7 +342,7 @@ def get_barcode_dirs(p, all_barcodes, chosen_dirs):
     return chosen_dirs
 
 
-def parse_input_dirs(prom_dir, client_sheet):
+def parse_input_dirs(prom_dir: str, client_sheet: dict) -> dict:
     """
     Scans a PromethION directory structure:
         Mla7_45_pool/
@@ -369,7 +385,7 @@ def parse_input_dirs(prom_dir, client_sheet):
     return source_dirs
 
 
-def create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=True, verbose=False):
+def create_new_structure(plasmid_dir: Path, client_sheet: dict, source_dirs: dict, collapse=True, nodata=False, verbose=False) -> bool:
     """
     Create new plasmid directory tree
 
@@ -378,6 +394,7 @@ def create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=True, 
     client_sheet - dict of client and barcode info provided by the user
     source_dirs - dict of provided client and barcode directories
     collapse - bool, whether to collapse FASTQs into a single file
+    nodata - bool, whether to skip copying data (for testing)
     verbose - bool, whether to display more information about the process
 
     returns: 
@@ -408,7 +425,8 @@ def create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=True, 
                 fps = [source_dirs[client][barcode]/f for f in os.listdir(source_dirs[client][barcode])]
                 if collapse:
                     collapse_fp = plasmid_dir/client/barcode/f'{barcode}.fq.gz'
-                    with gzip.open(collapse_fp,'wt') as fout:
+                    if not nodata:
+                        with gzip.open(collapse_fp,'wt') as fout:
                             for fp in fps:
                                 if fp.name.lower().endswith('.gz'):
                                     if verbose:
@@ -428,14 +446,16 @@ def create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=True, 
                     for fp in fps:
                         if verbose:
                             print(f'Copying {fp} to {plasmid_dir/client/barcode}')
-                        copy2(fp, plasmid_dir/client/barcode/fp.name)
+                        if not nodata:
+                            copy2(fp, plasmid_dir/client/barcode/fp.name)
                                     
                 ref = client_sheet[client][barcode]['ref']
                 if ref:
                     ref_dp = bp/'reference'
                     if not ref_dp.exists():
                         ref_dp.mkdir()
-                    copy2(ref, ref_dp/Path(ref).name)
+                    if not nodata:
+                        copy2(ref, ref_dp/Path(ref).name)
     # except Exception as exc:
     #     print(f'Failed to create new plasmid experiment directories {exc}')
     #     exit(3)
@@ -486,15 +506,15 @@ def main():
     parser.add_argument('-p', '--plasmid_dir', default=plasmid_dn, help='Path to output folder containing all client plasmid data')
     parser.add_argument('-v', '--verbose', action='store_true', help='Display more information about the prep process')
     parser.add_argument('-o','--overwrite', action='store_true', help='Overwrite existing plasmid directory')
-    parser.add_argument('--minimap2', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/minimap2', help='Path to minimap2')
-    parser.add_argument('--samtools', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/samtools', help='Path to samtools')
-    parser.add_argument('--filter_path', default='/home/brf/lib/miniconda3/bin/NanoFilt', help='Path to nanofilt or chopper')
-    parser.add_argument('--maxfilt_path', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/max_length.py', help='Path to maxfilt.py script')
-    parser.add_argument('--nextflow', default='/mnt/c0d8cf05-4ff7-4ee0-b973-db5773baaa03/Simple_Plasmid_Fork/bin/nextflow', help='Path to nextflow')
+    parser.add_argument('--chopper_path', default='/g/data/vz35/plasmid_gadi/bin/chopper-linux-musl', help='Path to chopper (filtering)')
     parser.add_argument('--pipeline_path', default='epi2me-labs/wf-clone-validation', help='Path to ONT wf-clone-validation pipeline')
     parser.add_argument('--pipeline_version', default='v1.8.4', help='wf-clone-validation pipeline version')
     parser.add_argument('--prefilter_prefix', default='unfilt_', help='Prefix for unfilterd FASTQs')
     parser.add_argument('--no_collapse', action='store_true', help='Disable collapsing FASTQs to a single file for each barcode')
+    parser.add_argument('--minimap2', default='minimap2', help='Path to minimap2 executable (using module, so just name of executable)')
+    parser.add_argument('--samtools', default='samtools', help='Path to samtools executable (using module, so just name of executable)')
+    parser.add_argument('--nodata', action='store_true', help='Run the script without creating any files, for testing purposes')
+    parser.add_argument('-e','--email', required=True, help='Email address for PBS notifications')
     
     args = parser.parse_args()
 
@@ -504,14 +524,21 @@ def main():
         exit(1)
     
     plasmid_dir = Path(args.plasmid_dir)
-    if plasmid_dir.exists():
+    if plasmid_dir.exists() and not args.nodata:
         if not args.overwrite:
             print(f'Plasmid run directory {plasmid_dir} already exists. '+\
                     f'Please delete it, choose to overwrite it, or name a different output directory')
             exit(1)
         else:
             rmtree(plasmid_dir)
-    plasmid_dir.mkdir()
+    try:
+        plasmid_dir.mkdir()
+    except FileExistsError:
+        if args.nodata:
+            pass
+        else:
+            print(f'Plasmid run directory {plasmid_dir} already exists. Please delete it or name a different output directory')
+            exit(1)
 
     # client sheet is the user input about each client and sample
     client_sheet = parse_samplesheet(args.samplesheet)
@@ -524,15 +551,15 @@ def main():
     collapse_fastqs = True
     if args.no_collapse:
         collapse_fastqs = False
-    success = create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=collapse_fastqs, verbose=args.verbose)
+    success = create_new_structure(plasmid_dir, client_sheet, source_dirs, collapse=collapse_fastqs, nodata=args.nodata, verbose=args.verbose)
 
     if success:
         print(f'Successfully create plasmid directory {plasmid_dir}')
 
     #local_path = Path(os.path.realpath(__file__)).parent
-    minimap2_fp = args.minimap2
-    samtools_fp = args.samtools
-    nextflow_fp = args.nextflow
+    # minimap2_fp = args.minimap2
+    # samtools_fp = args.samtools
+    # nextflow_fp = args.nextflow
     
     # each sample/alias has it's own set of records, alias is the barcode name and is the directory that holds the FASTQ files
     client_info = {}
@@ -596,8 +623,8 @@ def main():
 
         client_run_script_path = generate_client_run_script(client_sample_sheet_ref_path, 
                 client_sample_sheet_noref_path, client_info, client_sheet, cdir, 
-                nextflow_fp, args.pipeline_path, args.pipeline_version, args.filter_path, 
-                args.maxfilt_path, args.prefilter_prefix, minimap2_fp, samtools_fp)
+                args.pipeline_path, args.pipeline_version, args.chopper_path, 
+                args.prefilter_prefix, args.minimap2, args.samtools, args.email)
         print(f'Created script {client_run_script_path} for client {cdir.name}')
         client_script_paths.append(client_run_script_path)
         

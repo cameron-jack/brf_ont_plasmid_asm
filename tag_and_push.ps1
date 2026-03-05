@@ -1,8 +1,10 @@
-$VER = "v3.03.003"
+$VER = "v3.04.000"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Fixed: forces older Nextflow version (23.10.0) to be used in the generated run scripts to avoid ONT template issue.
+* New: dedicated script to run pipeline on Gadi
+* New: uses Chopper to handle read filtering instead of NanoFilt
+* New: generates launch and run scripts for Gadi
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
