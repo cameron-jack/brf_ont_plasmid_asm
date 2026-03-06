@@ -145,6 +145,7 @@ def generate_client_run_script(client_sample_sheet_ref_path, client_sample_sheet
         print(f'export SINGULARITY_CACHEDIR={singularity_cache}', file=fout)
         print(f'export NXF_SINGULARITY_CACHEDIR=$SINGULARITY_CACHEDIR', file=fout)
         print('export NXF_VER=23.10.1', file=fout)
+        print('export NXF_HOME=/g/data/vz35/plasmid_gadi', file=fout)
         print('', file=fout)
         print(f'# Comment any of the filtering script paths below to disable filtering prior to plasmid assembly', file=fout)
         for fsp in filter_script_paths:

@@ -1,8 +1,8 @@
-$VER = "v3.04.001"
+$VER = "v3.04.002"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Changed: updated documentation to include Gadi and local execution instructions.
+* Fixed: sets a fixed NXF_HOME for Gadi.
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
