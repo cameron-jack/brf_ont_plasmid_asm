@@ -29,7 +29,7 @@ This pipeline requires a 64-bit Linux system and python (supported versions are 
 
 Download the pipeline via Git:
 ```bash
-git clone brf_ont_plasmid_asm
+git clone https://github.com/cameron-jack/brf_ont_plasmid_asm.git
 ```
 
 External dependencies:
