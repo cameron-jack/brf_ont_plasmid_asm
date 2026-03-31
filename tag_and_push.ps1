@@ -1,8 +1,8 @@
-$VER = "v3.04.002"
+$VER = "v3.04.003"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Fixed: sets a fixed NXF_HOME for Gadi.
+* New: clean up script from Ziyan
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
