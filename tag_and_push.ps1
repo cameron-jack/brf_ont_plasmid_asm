@@ -1,8 +1,8 @@
-$VER = "v3.04.004"
+$VER = "v3.04.005"
 $DATE = "Date: {0}" -f (Get-Date)
 
 $COMMENT = @"
-* Fixed the git clone path
+* Fixed: added back changelog
 "@
 
 Move-Item -Path "changelog.txt" -Destination "changelog_old.txt"
